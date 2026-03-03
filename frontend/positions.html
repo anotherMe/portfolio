@@ -75,6 +75,12 @@
                 <option value="closed">Show closed positions</option>
             </select>
 
+            <a href="position_new.html" 
+               style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; background: #3b82f6; color: white; text-decoration: none; border-radius: 6px; font-weight: 500;">
+                <span class="material-symbols-outlined" style="font-size: 1.25rem;">add</span>
+                Add new position
+            </a>
+
             <div class="search-bar">
                 <input type="text" x-model="searchQuery" placeholder="🔍 Search by Instrument ISIN, Ticker, or Name...">
                 <button x-show="searchQuery.length > 0" class="clear-btn" @click="searchQuery = ''">
@@ -104,6 +110,7 @@
                         <th class="numeric">Market Price</th>
                         <th class="numeric">PnL</th>
                         <th class="numeric">PnL %</th>
+                        <th style="width: 120px;">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -133,10 +140,22 @@
                                 <span :class="getColorClass(pos.pnl_percent)"
                                     x-text="formatPercent(pos.pnl_percent)"></span>
                             </td>
+                            <td>
+                                <div style="display: flex; gap: 0.25rem;">
+                                    <a :href="'position_detail.html?id=' + pos.position_id"
+                                       style="padding: 0.25rem 0.5rem; background: var(--accent-color); color: white; text-decoration: none; border-radius: 4px; font-size: 0.75rem;">
+                                        Detail
+                                    </a>
+                                    <a :href="'position_edit.html?id=' + pos.position_id"
+                                       style="padding: 0.25rem 0.5rem; background: var(--text-secondary); color: white; text-decoration: none; border-radius: 4px; font-size: 0.75rem;">
+                                        Edit
+                                    </a>
+                                </div>
+                            </td>
                         </tr>
                     </template>
                     <tr x-show="filteredPositions.length === 0">
-                        <td colspan="7" style="text-align: center; padding: 2rem; color: var(--text-secondary);">
+                        <td colspan="8" style="text-align: center; padding: 2rem; color: var(--text-secondary);">
                             No positions found matching your criteria.
                         </td>
                     </tr>

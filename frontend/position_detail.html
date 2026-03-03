@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Position Detail - PIP</title>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <!-- Icons -->
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="master.css">
+
+    <!-- AlpineJS -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</head>
+
+<body x-data="positionDetailApp()">
+
+    <div class="container">
+        <header>
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                <h1>
+                    <span class="material-symbols-outlined"
+                        style="font-size: 2rem; color: var(--accent-color);">info</span>
+                    Position Detail
+                </h1>
+
+                <a href="positions.html" 
+                   style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; background: var(--bg-card); color: var(--text-primary); text-decoration: none; border-radius: 6px; border: 1px solid var(--border-color);">
+                    <span class="material-symbols-outlined" style="font-size: 1.25rem;">arrow_back</span>
+                    Back to Positions
+                </a>
+            </div>
+        </header>
+
+        <!-- Loader -->
+        <div x-show="isLoading" class="loader"></div>
+
+        <!-- Error Message -->
+        <div x-show="error" x-text="error"
+            style="color: var(--danger-color); padding: 1rem; text-align: center; border: 1px solid var(--danger-color); border-radius: 6px; margin-bottom: 1rem;">
+        </div>
+
+        <!-- Position Details -->
+        <div x-show="!isLoading && !error && position" style="display: flex; flex-direction: column; gap: 1.5rem;">
+            
+            <!-- Instrument Info -->
+            <div style="padding: 1.5rem; background: var(--bg-card); border-radius: 8px; border: 1px solid var(--border-color);">
+                <h2 style="margin: 0 0 1rem 0; font-size: 1.25rem;" x-text="position.instrument_name"></h2>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                    <div>
+                        <div style="font-size: 0.875rem; color: var(--text-secondary);">Ticker</div>
+                        <div style="font-weight: 500;"><span class="badge" x-text="position.instrument_ticker"></span></div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.875rem; color: var(--text-secondary);">ISIN</div>
+                        <div style="font-weight: 500;" x-text="position.instrument_isin || '-'"></div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.875rem; color: var(--text-secondary);">Currency</div>
+                        <div style="font-weight: 500;" x-text="position.instrument_currency"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Position Summary -->
+            <div style="padding: 1.5rem; background: var(--bg-card); border-radius: 8px; border: 1px solid var(--border-color);">
+                <h3 style="margin: 0 0 1rem 0; font-size: 1rem;">Position Summary</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                    <div>
+                        <div style="font-size: 0.875rem; color: var(--text-secondary);">Opening Date</div>
+                        <div style="font-weight: 500;" x-text="formatDate(position.opening_date)"></div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.875rem; color: var(--text-secondary);">Remaining Quantity</div>
+                        <div style="font-weight: 500;" x-text="position.remaining_quantity"></div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.875rem; color: var(--text-secondary);">Total Invested</div>
+                        <div style="font-weight: 500;" x-text="formatMoney(position.total_invested, position.instrument_symbol)"></div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.875rem; color: var(--text-secondary);">Cost Basis</div>
+                        <div style="font-weight: 500;" x-text="formatMoney(position.remaining_cost_basis, position.instrument_symbol)"></div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.875rem; color: var(--text-secondary);">Latest Price</div>
+                        <div style="font-weight: 500;" x-text="formatMoney(position.latest_price, position.instrument_symbol)"></div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.875rem; color: var(--text-secondary);">Market Value</div>
+                        <div style="font-weight: 500;" x-text="formatMoney(position.remaining_quantity * position.latest_price, position.instrument_symbol)"></div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.875rem; color: var(--text-secondary);">Realized PnL</div>
+                        <div style="font-weight: 500;" :class="getColorClass(position.realized_pnl)" x-text="formatMoney(position.realized_pnl, position.instrument_symbol)"></div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.875rem; color: var(--text-secondary);">Unrealized PnL</div>
+                        <div style="font-weight: 500;" :class="getColorClass(position.unrealized_pnl)" x-text="formatMoney(position.unrealized_pnl, position.instrument_symbol)"></div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.875rem; color: var(--text-secondary);">Transactions Amount</div>
+                        <div style="font-weight: 500;" :class="getColorClass(position.transactions_amount)" x-text="formatMoney(position.transactions_amount, position.instrument_symbol)"></div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.875rem; color: var(--text-secondary);">Total PnL</div>
+                        <div style="font-weight: 500;" :class="getColorClass(position.pnl)" x-text="formatMoney(position.pnl, position.instrument_symbol)"></div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.875rem; color: var(--text-secondary);">Total PnL %</div>
+                        <div style="font-weight: 500;" :class="getColorClass(position.pnl_percent)" x-text="formatPercent(position.pnl_percent)"></div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.875rem; color: var(--text-secondary);">Status</div>
+                        <div style="font-weight: 500;">
+                            <span x-show="position.closing_date" class="badge">Closed on <span x-text="formatDate(position.closing_date)"></span></span>
+                            <span x-show="!position.closing_date" class="badge positive">Open</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Trades -->
+            <div style="padding: 1.5rem; background: var(--bg-card); border-radius: 8px; border: 1px solid var(--border-color);">
+                <h3 style="margin: 0 0 1rem 0; font-size: 1rem;">Trades</h3>
+                <table style="width: 100%;">
+                    <thead>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <th style="text-align: left; padding: 0.5rem;">Date</th>
+                            <th style="text-align: left; padding: 0.5rem;">Type</th>
+                            <th style="text-align: right; padding: 0.5rem;">Qty</th>
+                            <th style="text-align: right; padding: 0.5rem;">Price</th>
+                            <th style="text-align: right; padding: 0.5rem;">Total</th>
+                            <th style="text-align: left; padding: 0.5rem;">Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template x-for="trade in trades" :key="trade.id">
+                            <tr style="border-bottom: 1px solid var(--border-color);">
+                                <td style="padding: 0.5rem;" x-text="formatDate(trade.date)"></td>
+                                <td style="padding: 0.5rem;">
+                                    <span class="badge" :class="trade.type === 'buy' ? 'positive' : 'negative'" x-text="trade.type"></span>
+                                </td>
+                                <td style="text-align: right; padding: 0.5rem;" x-text="trade.quantity"></td>
+                                <td style="text-align: right; padding: 0.5rem;" x-text="formatMoney(trade.price, position.instrument_symbol)"></td>
+                                <td style="text-align: right; padding: 0.5rem;" x-text="formatMoney(trade.price * trade.quantity, position.instrument_symbol)"></td>
+                                <td style="padding: 0.5rem;" x-text="trade.description || '-'"></td>
+                            </tr>
+                        </template>
+                        <tr x-show="trades.length === 0">
+                            <td colspan="6" style="padding: 1rem; text-align: center; color: var(--text-secondary);">No trades for this position</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+
+        <!-- Not Found -->
+        <div x-show="!isLoading && !error && !position" style="text-align: center; padding: 2rem; color: var(--text-secondary);">
+            Position not found.
+        </div>
+
+    </div>
+
+    <!-- App Logic -->
+    <script src="utils.js"></script>
+    <script>
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('positionDetailApp', () => ({
+                position: null,
+                trades: [],
+                isLoading: false,
+                error: null,
+                positionId: null,
+
+                async init() {
+                    const urlParams = new URLSearchParams(window.location.search);
+                    this.positionId = urlParams.get('id');
+                    
+                    if (!this.positionId) {
+                        this.error = 'No position ID provided';
+                        return;
+                    }
+                    
+                    this.fetchData();
+                },
+
+                async fetchData() {
+                    this.isLoading = true;
+                    this.error = null;
+                    try {
+                        await Promise.all([
+                            this.fetchPosition(),
+                            this.fetchTrades()
+                        ]);
+                    } catch (err) {
+                        console.error("Failed to fetch data:", err);
+                        this.error = "Failed to load position data. Make sure the backend is running on port 8000.";
+                    } finally {
+                        this.isLoading = false;
+                    }
+                },
+
+                async fetchPosition() {
+                    const url = `http://localhost:8000/api/positions?status_filter=all`;
+                    const response = await fetch(url);
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    const positions = await response.json();
+                    this.position = positions.find(p => p.position_id == this.positionId);
+                    if (!this.position) {
+                        this.error = 'Position not found';
+                    }
+                },
+
+                async fetchTrades() {
+                    const url = `http://localhost:8000/api/trades`;
+                    const response = await fetch(url);
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    const allTrades = await response.json();
+                    this.trades = allTrades.filter(t => t.position_id == this.positionId);
+                },
+
+                formatMoney: window.utils.formatMoney,
+                formatPercent: window.utils.formatPercent,
+                formatDate: window.utils.formatDate,
+                getColorClass: window.utils.getColorClass
+            }));
+        });
+    </script>
+</body>
+
+</html>

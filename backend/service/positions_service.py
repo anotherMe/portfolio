@@ -1,8 +1,7 @@
-
 from collections import deque
-from typing import Optional
-from dataclasses import dataclass
-    # No pandas dependency
+from typing import Optional, Any
+from pydantic import BaseModel, ConfigDict
+from datetime import datetime
 from lib.database import read_from_db
 from lib.models import Position, UTCDateTime
 from lib.repo.trades_repository import get_trades_for_position_list
@@ -19,10 +18,9 @@ log = setup_logger(__name__)
 # -- DTO Models
 # -----------------------
 
-@dataclass
-class PositionDTO:
-    """Data Transfer Object for Position summary."""
-
+class PositionDTO(BaseModel):
+    model_config = ConfigDict(extra='allow', validate_assignment=False)
+    
     position_id: int
     
     instrument_id: int = 0
@@ -32,20 +30,18 @@ class PositionDTO:
     instrument_currency: str = ""
     instrument_symbol: str = ""
 
-    opening_date: Optional[UTCDateTime] = None
+    opening_date: Optional[datetime] = None
 
     total_invested: float = 0.00
     
     latest_price: float = 0.00
-    latest_price_date: Optional[UTCDateTime] = None
+    latest_price_date: Optional[datetime] = None
     
     transactions_amount: float = 0.00
-    closing_date: Optional[UTCDateTime] = None
+    closing_date: Optional[datetime] = None
     remaining_quantity: int = 0
     remaining_cost_basis: float = 0.00
     
-    # avg_buy_price: float = 0.00
-
     realized_pnl: float = 0.00
     unrealized_pnl: float = 0.00
     realized_pnl_percent: float = 0.00
@@ -56,9 +52,7 @@ class PositionDTO:
     pnl_percent: float = 0.00
 
 
-@dataclass
-class CurrencyTotalDTO:
-    """Data Transfer Object for Totals grouped by currency."""
+class CurrencyTotalDTO(BaseModel):
     currency: str = ""
     symbol: str = ""
     total_invested: float = 0.00
@@ -79,7 +73,7 @@ def _apply_fifo(session, positions: list[Position]) -> list[PositionDTO]:
     positionDTOs = []
     for position in positions:
 
-        positionDTO = PositionDTO(position.id)
+        positionDTO = PositionDTO(position_id=position.id)
         positionDTO.instrument_id = position.instrument.id
         positionDTO.instrument_name = position.instrument.name
         positionDTO.instrument_isin = position.instrument.isin

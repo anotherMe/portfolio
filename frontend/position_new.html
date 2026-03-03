@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Position - PIP</title>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <!-- Icons -->
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="master.css">
+
+    <!-- AlpineJS -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</head>
+
+<body x-data="positionNewApp()">
+
+    <div class="container">
+        <header>
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                <h1>
+                    <span class="material-symbols-outlined"
+                        style="font-size: 2rem; color: var(--accent-color);">add</span>
+                    New Position
+                </h1>
+
+                <a href="positions.html" 
+                   style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; background: var(--bg-card); color: var(--text-primary); text-decoration: none; border-radius: 6px; border: 1px solid var(--border-color); margin-left: auto;">
+                    <span class="material-symbols-outlined" style="font-size: 1.25rem;">arrow_back</span>
+                    Back to Positions
+                </a>
+            </div>
+        </header>
+
+        <!-- Loader -->
+        <div x-show="isLoading" class="loader"></div>
+
+        <!-- Error Message -->
+        <div x-show="error" x-text="error"
+            style="color: var(--danger-color); padding: 1rem; text-align: center; border: 1px solid var(--danger-color); border-radius: 6px; margin-bottom: 1rem;">
+        </div>
+
+        <!-- Success Message -->
+        <div x-show="successMessage" x-text="successMessage"
+            style="color: var(--success-color); padding: 1rem; text-align: center; border: 1px solid var(--success-color); border-radius: 6px; margin-bottom: 1rem;">
+        </div>
+
+        <!-- New Position Form -->
+        <div x-show="!isLoading">
+            <div style="padding: 1.5rem; background: var(--bg-card); border-radius: 8px; border: 1px solid var(--border-color);">
+                <h3 style="margin: 0 0 1rem 0; font-size: 1rem;">Create a new position by adding your first trade</h3>
+                <form @submit.prevent="submitTrade" 
+                      style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem;">
+                    
+                    <div>
+                        <label style="display: block; margin-bottom: 0.25rem; font-size: 0.875rem; color: var(--text-secondary);">Account *</label>
+                        <select x-model="newTrade.account_name" required
+                            style="width: 100%; padding: 0.5rem; background: var(--bg-main); border: 1px solid var(--border-color); border-radius: 4px; color: var(--text-primary);">
+                            <option value="">Select Account</option>
+                            <template x-for="acc in accounts" :key="acc.id">
+                                <option :value="acc.name" x-text="acc.name"></option>
+                            </template>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label style="display: block; margin-bottom: 0.25rem; font-size: 0.875rem; color: var(--text-secondary);">Instrument Ticker *</label>
+                        <input type="text" x-model="newTrade.instrument_ticker" placeholder="e.g. AAPL" required
+                            style="width: 100%; padding: 0.5rem; background: var(--bg-main); border: 1px solid var(--border-color); border-radius: 4px; color: var(--text-primary);">
+                    </div>
+
+                    <div>
+                        <label style="display: block; margin-bottom: 0.25rem; font-size: 0.875rem; color: var(--text-secondary);">Date *</label>
+                        <input type="date" x-model="newTrade.date" required
+                            style="width: 100%; padding: 0.5rem; background: var(--bg-main); border: 1px solid var(--border-color); border-radius: 4px; color: var(--text-primary);">
+                    </div>
+
+                    <div>
+                        <label style="display: block; margin-bottom: 0.25rem; font-size: 0.875rem; color: var(--text-secondary);">Type *</label>
+                        <select x-model="newTrade.trade_type" required
+                            style="width: 100%; padding: 0.5rem; background: var(--bg-main); border: 1px solid var(--border-color); border-radius: 4px; color: var(--text-primary);">
+                            <option value="buy">Buy</option>
+                            <option value="sell">Sell</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label style="display: block; margin-bottom: 0.25rem; font-size: 0.875rem; color: var(--text-secondary);">Quantity *</label>
+                        <input type="number" x-model.number="newTrade.quantity" min="1" required placeholder="e.g. 10"
+                            style="width: 100%; padding: 0.5rem; background: var(--bg-main); border: 1px solid var(--border-color); border-radius: 4px; color: var(--text-primary);">
+                    </div>
+
+                    <div>
+                        <label style="display: block; margin-bottom: 0.25rem; font-size: 0.875rem; color: var(--text-secondary);">Price *</label>
+                        <input type="number" x-model.number="newTrade.price" step="0.01" min="0" required placeholder="e.g. 150.00"
+                            style="width: 100%; padding: 0.5rem; background: var(--bg-main); border: 1px solid var(--border-color); border-radius: 4px; color: var(--text-primary);">
+                    </div>
+
+                    <div>
+                        <label style="display: block; margin-bottom: 0.25rem; font-size: 0.875rem; color: var(--text-secondary);">Description</label>
+                        <input type="text" x-model="newTrade.description" placeholder="Optional description"
+                            style="width: 100%; padding: 0.5rem; background: var(--bg-main); border: 1px solid var(--border-color); border-radius: 4px; color: var(--text-primary);">
+                    </div>
+
+                    <div style="display: flex; align-items: flex-end;">
+                        <button type="submit" 
+                            :disabled="isSubmitting"
+                            style="width: 100%; padding: 0.5rem 1rem; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 500;">
+                            <span x-show="!isSubmitting">Create Position</span>
+                            <span x-show="isSubmitting">Creating...</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Back to list Button -->
+            <div style="margin-top: 1rem; text-align: center;">
+                <a href="positions.html" 
+                   style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; background: var(--bg-card); color: var(--text-primary); text-decoration: none; border-radius: 6px; border: 1px solid var(--border-color); margin-left: auto;">
+                    <span class="material-symbols-outlined" style="font-size: 1.25rem;">arrow_back</span>
+                    Back to Positions
+                </a>
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- App Logic -->
+    <script src="utils.js"></script>
+    <script>
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('positionNewApp', () => ({
+                accounts: [],
+                isLoading: false,
+                error: null,
+                successMessage: null,
+                isSubmitting: false,
+
+                newTrade: {
+                    account_name: '',
+                    instrument_ticker: '',
+                    date: new Date().toISOString().split('T')[0],
+                    trade_type: 'buy',
+                    quantity: null,
+                    price: null,
+                    description: ''
+                },
+
+                async init() {
+                    this.accounts = await window.utils.fetchAccounts();
+                    if (this.accounts.length > 0) {
+                        this.newTrade.account_name = this.accounts[0].name;
+                    }
+                },
+
+                async submitTrade() {
+                    this.isSubmitting = true;
+                    this.error = null;
+                    this.successMessage = null;
+                    try {
+                        const response = await fetch('http://localhost:8000/api/trades', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                account_name: this.newTrade.account_name,
+                                instrument_ticker: this.newTrade.instrument_ticker,
+                                date: this.newTrade.date,
+                                trade_type: this.newTrade.trade_type,
+                                quantity: this.newTrade.quantity,
+                                price: this.newTrade.price,
+                                description: this.newTrade.description || null
+                            })
+                        });
+                        
+                        if (!response.ok) {
+                            const err = await response.json();
+                            throw new Error(err.detail || 'Failed to create position');
+                        }
+                        
+                        this.successMessage = 'Position created successfully!';
+                        this.cloneForm();
+                        setTimeout(() => this.successMessage = null, 3000);
+                    } catch (err) {
+                        this.error = err.message;
+                    } finally {
+                        this.isSubmitting = false;
+                    }
+                }
+            }));
+        });
+    </script>
+</body>
+
+</html>

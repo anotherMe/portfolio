@@ -66,5 +66,16 @@ window.utils = {
             console.error(err);
             return [];
         }
+    },
+
+    async fetchInstruments() {
+        try {
+            const response = await fetch('http://localhost:8000/api/instruments');
+            if (!response.ok) throw new Error('Failed to fetch instruments');
+            return await response.json();
+        } catch (err) {
+            console.error(err);
+            return [];
+        }
     }
 };

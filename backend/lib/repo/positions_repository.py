@@ -12,6 +12,15 @@ def get_all_positions(session, account=None):
         stmt = stmt.filter_by(account_id=account.id)
     return session.scalars(stmt).all()
 
+def get_position_by_id(session, position_id):
+    return session.get(Position, position_id)
+
+def close_position(session, position, closing_date):
+    position.closed = True
+    position.closing_date = closing_date
+    session.flush()
+    log.info(f"🔒 Closed Position ID {position.id}")
+
 def delete_position(session, position_id):
     position = session.get(Position, position_id)
     if position:
