@@ -1,41 +1,38 @@
-# Personal Investment Portfolio (PIP)
 
-## Architecture
-- **Backend**: FastAPI (Python) serving a REST JSON API, backed by SQLAlchemy and SQLite.
-- **Frontend**: AlpineJS (HTML/JS)
----
+# Backend
 
-## How to Run
-
-### 1. Backend
-
-The backend uses Python 3 and a virtual environment.
-
-**Setup (First Time Only):**
-```bash
+```sh
 cd backend
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
+uvicorn app:app --reload
 ```
 
-**Run the Server:**
-```bash
-cd backend
-source .venv/bin/activate
-uvicorn main:app --reload --port 8000
-```
-The API will be accessible at `http://localhost:8000`. You can view the interactive API documentation at `http://localhost:8000/docs`.
+# Frontend
 
-### 2. Frontend
-
-The frontend is completely static and uses Alpine.js via CDN. There is no `npm` or Node.js setup required.
-
-**Run the Server:**
-You can use Python's built-in HTTP server to serve the frontend files locally.
-
-```bash
+```sh
 cd frontend
-python3 -m http.server 8080
+npm install
+npm run dev
 ```
-Open your browser and navigate to `http://localhost:8080`.
+
+# Code policy
+
+## Core principles (FastAPI + SQLAlchemy)
+
+FastAPI expects:
+
+- One Engine per application
+- One Session per request
+- Explicit session close
+- No global sessions
+- No ORM usage outside a session scope
+
+This is non-negotiable if you want predictable behavior.
+
+
+## Pydantic schemas policy
+
+Define **Pydantic** schemas that mirror your API, not your DB.
+

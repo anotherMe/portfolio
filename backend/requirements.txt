@@ -1,7 +1,4 @@
 fastapi
 uvicorn
-sqlalchemy
+SQLAlchemy
 yfinance
-pydantic
-faker
-pytest

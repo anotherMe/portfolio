@@ -1,0 +1,25 @@
+{
+    "folders": [
+        {
+            "name": "Backend (Python)",
+            "path": "backend"
+        },
+        {
+            "name": "Project Root",
+            "path": "."
+        },
+        {
+            "name": "Frontend (Vue.js)",
+            "path": "vuefrontend"
+        },
+        {
+            "name": "Frontend (Alpine)",
+            "path": "alpinefrontend"
+        },
+        {
+            "name": "Frontend (Textual)",
+            "path": "textualfrontend"
+        }
+    ],
+    "settings": {}
+}
