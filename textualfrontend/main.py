@@ -15,13 +15,13 @@ class MyFancyApp(App):
         yield Header()
         yield Footer()
 
-        with TabbedContent(initial="instruments"):
-            
-            with TabPane("Instruments", id="instruments"):
-                yield InstrumentsTab()
+        with TabbedContent(initial="positions"):
 
             with TabPane("Positions", id="positions"):
                 yield PositionsTab()
+
+            with TabPane("Instruments", id="instruments"):
+                yield InstrumentsTab()
 
             with TabPane("Transactions", id="transactions"):
                 yield Markdown("CHLOE")
