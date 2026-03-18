@@ -32,6 +32,7 @@ class TradesList(Vertical):
 
     def on_mount(self) -> None:
         """Fetch and populate data when the tab is mounted."""
+    
         table = self.query_one("#trades_table", DataTable)
         trades = get_trades()
 
@@ -40,6 +41,15 @@ class TradesList(Vertical):
             table.add_columns(*columns_to_show)
             for trade in trades:
                 table.add_row(*trade.model_dump(include=set(columns_to_show)).values(), key=str(trade.id))
+
+    def refresh_table(self, account_id: str = None) -> None:
+        """Clear and repopulate the table filtered by account_id."""
+        table = self.query_one("#trades_table", DataTable)
+        table.clear()
+        trades = get_trades(account_id)
+        for trade in trades:
+            columns_to_show = ["date", "type", "quantity", "price", "description"]
+            table.add_row(*trade.model_dump(include=set(columns_to_show)).values(), key=str(trade.id))
 
 class TradesTab(Vertical):
     """The Trades tab content."""

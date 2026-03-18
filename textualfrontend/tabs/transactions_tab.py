@@ -41,6 +41,15 @@ class TransactionsList(Vertical):
             for tx in transactions:
                 table.add_row(*tx.model_dump(include=set(columns_to_show)).values(), key=str(tx.id))
 
+    def refresh_table(self, account_id: str = None) -> None:
+        """Clear and repopulate the table filtered by account_id."""
+        table = self.query_one("#transactions_table", DataTable)
+        table.clear()
+        transactions = get_transactions(account_id)
+        for tx in transactions:
+            columns_to_show = ["date", "type", "amount", "description"]
+            table.add_row(*tx.model_dump(include=set(columns_to_show)).values(), key=str(tx.id))
+
 class TransactionsTab(Vertical):
     """The Transactions tab content."""
 

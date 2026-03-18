@@ -48,7 +48,24 @@ class PositionsList(Vertical):
             }
             table.add_columns(*positions[0].model_dump(include=columns_to_show).keys())
             for position in positions:
-                table.add_row(*position.model_dump(include=columns_to_show).values(), key=str(position.position_id))    
+                table.add_row(*position.model_dump(include=columns_to_show).values(), key=str(position.position_id))
+
+    def refresh_table(self, account_id: str = None) -> None:
+        """Clear and repopulate the table filtered by account_id."""
+        table = self.query_one("#positions_table", DataTable)
+        table.clear()
+        positions = get_positions(account_id)
+        if positions:
+            columns_to_show = {
+                "instrument_name", "instrument_isin", "instrument_ticker",
+                "opening_date", "total_invested", "latest_price",
+                "latest_price_date", "transactions_amount", "closing_date",
+                "remaining_quantity", "remaining_cost_basis", "realized_pnl",
+                "unrealized_pnl", "realized_pnl_percent", "unrealized_pnl_percent",
+                "pnl", "pnl_percent", "position_closed"
+            }
+            for position in positions:
+                table.add_row(*position.model_dump(include=columns_to_show).values(), key=str(position.position_id))
 
 class PositionsTab(Vertical):
     """The Positions tab content."""

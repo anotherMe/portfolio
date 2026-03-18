@@ -7,7 +7,13 @@ def get_all_trades(session: Session):
     return session.query(Trade).order_by(Trade.date).all()
     
 def get_all_trades_by_account(session: Session, account_id: int):
-    return session.query(Trade).filter_by(account_id=account_id).order_by(Trade.date).all()
+    return (
+        session.query(Trade)
+        .join(Position, Trade.position_id == Position.id)
+        .filter(Position.account_id == account_id)
+        .order_by(Trade.date)
+        .all()
+    )
 
 def get_trades_for_position_list(session: Session, position_ids: list[int]) -> list[Trade]:
     if not position_ids:
