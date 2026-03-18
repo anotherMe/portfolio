@@ -22,8 +22,13 @@ class TradesList(Vertical):
     """Trades list (DataTable) on top half and the details view on the bottom half"""
     
     def compose(self) -> ComposeResult:
-        yield DataTable(id="trades_table", cursor_type="row")
-        yield TradeDetails(id="trade_details")
+        table = DataTable(id="trades_table", cursor_type="row")
+        table.styles.height = "2fr"
+        yield table
+
+        details = TradeDetails(id="trade_details")
+        details.styles.height = "1fr"
+        yield details
 
     def on_mount(self) -> None:
         """Fetch and populate data when the tab is mounted."""

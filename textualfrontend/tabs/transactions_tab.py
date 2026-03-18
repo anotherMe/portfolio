@@ -22,8 +22,13 @@ class TransactionsList(Vertical):
     """Transactions list (DataTable) on top half and the details view on the bottom half"""
     
     def compose(self) -> ComposeResult:
-        yield DataTable(id="transactions_table", cursor_type="row")
-        yield TransactionDetails(id="transaction_details")
+        table = DataTable(id="transactions_table", cursor_type="row")
+        table.styles.height = "2fr"
+        yield table
+        
+        details = TransactionDetails(id="transaction_details")
+        details.styles.height = "1fr"
+        yield details
 
     def on_mount(self) -> None:
         """Fetch and populate data when the tab is mounted."""
