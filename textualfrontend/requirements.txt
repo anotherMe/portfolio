@@ -1,3 +1,5 @@
 textual
 pydantic
 requests
+# for development
+textual-dev
