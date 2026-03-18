@@ -4,6 +4,8 @@ from textual.widgets import Footer, Header, Markdown, TabPane, TabbedContent
 # Import custom widgets
 from tabs.instruments_tab import InstrumentsTab
 from tabs.positions_tab import PositionsTab
+from tabs.trades_tab import TradesTab
+from tabs.transactions_tab import TransactionsTab
 
 class MyFancyApp(App):
     """A Textual app to manage stopwatches."""
@@ -24,10 +26,10 @@ class MyFancyApp(App):
                 yield InstrumentsTab()
 
             with TabPane("Transactions", id="transactions"):
-                yield Markdown("CHLOE")
+                yield TransactionsTab()
 
             with TabPane("Trades", id="trades"):
-                yield Markdown("PAUL")
+                yield TradesTab()
 
     def action_toggle_dark(self) -> None:
         """An action to toggle dark mode."""

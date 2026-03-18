@@ -10,7 +10,7 @@ class TradeBase(BaseModel):
     date: datetime
     type: TradeType
     quantity: int
-    price: int
+    price: float
     description: Optional[str] = None
 
 

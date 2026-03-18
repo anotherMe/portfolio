@@ -10,7 +10,7 @@ class TransactionBase(BaseModel):
     position_id: Optional[int] = None
     date: datetime
     type: TransactionType
-    amount: int
+    amount: float
     description: Optional[str] = None
 
 
