@@ -1,8 +1,10 @@
+
 from textual.app import ComposeResult
 from textual import on
 from textual.widgets import DataTable, ContentSwitcher, Button, Static
 from textual.containers import Vertical, Horizontal
 from api_service import get_trades
+
 
 class TradeEdit(Vertical):
     """A custom widget representing the edit view."""
@@ -34,22 +36,25 @@ class TradesList(Vertical):
         """Fetch and populate data when the tab is mounted."""
     
         table = self.query_one("#trades_table", DataTable)
-        trades = get_trades()
+        
+        self.columns_to_show = ["date", "type", "quantity", "price", "description"]
+        table.add_columns(*self.columns_to_show)
 
+        trades = get_trades()
         if trades:
-            columns_to_show = ["date", "type", "quantity", "price", "description"]
-            table.add_columns(*columns_to_show)
-            for trade in trades:
-                table.add_row(*trade.model_dump(include=set(columns_to_show)).values(), key=str(trade.id))
+            self._populate_table(trades, table)
 
     def refresh_table(self, account_id: str = None) -> None:
         """Clear and repopulate the table filtered by account_id."""
         table = self.query_one("#trades_table", DataTable)
-        table.clear()
         trades = get_trades(account_id)
+        if trades:
+            self._populate_table(trades, table)
+
+    def _populate_table(self, trades, table):
+        table.clear()
         for trade in trades:
-            columns_to_show = ["date", "type", "quantity", "price", "description"]
-            table.add_row(*trade.model_dump(include=set(columns_to_show)).values(), key=str(trade.id))
+            table.add_row(*trade.model_dump(include=set(self.columns_to_show)).values(), key=str(trade.id))
 
 class TradesTab(Vertical):
     """The Trades tab content."""

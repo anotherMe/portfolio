@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from repositories import prices_repository
+from repositories import ohlcvs_repository
 
 class PriceDTO:
     def __init__(self, instrument_id: int, price: float, date):
@@ -11,7 +11,7 @@ def get_latest_prices_for_instrument_list(session: Session, inst_ids: list[int])
     """
     Returns a list of PriceDTOs with the latest price for each instrument in the list.
     """
-    rows = prices_repository.get_latest_prices_for_instrument_list(session, inst_ids)
+    rows = ohlcvs_repository.get_latest_prices_for_instrument_list(session, inst_ids)
     
     # Rows are typically (instrument_id, price, date) tuples/objects
     # We need to convert price from DB integer to float if repository doesn't do it
@@ -28,7 +28,7 @@ def get_latest_prices_for_instrument_list(session: Session, inst_ids: list[int])
         # In repo: select(Price.instrument_id, Price.price, subquery.c.latest_date.label("date"))
         
         inst_id = row.instrument_id
-        price_int = row.price
+        price_int = row.close
         date = row.date
         
         results.append(PriceDTO(inst_id, read_from_db(price_int), date))

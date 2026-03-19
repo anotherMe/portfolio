@@ -22,7 +22,8 @@ class MyFancyApp(App):
 
     CSS = """
     #status-bar {
-        background: #1a3a5c;
+        height: 1;
+        background: blue;
         color: #a8d8ff;
         padding: 0 2;
         text-align: right;
@@ -53,17 +54,7 @@ class MyFancyApp(App):
                     yield TradesTab()
                 with TabPane("Accounts", id="accounts"):
                     yield AccountsTab()
-            yield StatusBar("  📂  Account: All Accounts", id="status-bar")
-
-    def on_resize(self, event: Resize) -> None:
-        """Recalculate widget heights on every resize (and initial render)."""
-        try:
-            # Header = 1, Footer = 1, StatusBar = 1 → TabbedContent gets the rest
-            content_height = event.size.height - 3
-            self.query_one(TabbedContent).styles.height = content_height
-            self.query_one("#status-bar", StatusBar).styles.height = 1
-        except Exception:
-            pass
+        yield StatusBar("  📂  Account: All Accounts", id="status-bar")
 
     def on_mount(self) -> None:
         """Load accounts on startup."""

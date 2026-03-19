@@ -3,6 +3,8 @@ from textual import on
 from textual.widgets import DataTable, ContentSwitcher, Button, Static
 from textual.containers import Vertical, Horizontal
 from api_service import get_positions
+from rich.text import Text
+
 
 class PositionEdit(Vertical):
     """A custom widget representing the position detail view."""
@@ -34,38 +36,44 @@ class PositionsList(Vertical):
 
     def on_mount(self) -> None:
         """Fetch and populate data when the tab is mounted."""
+        
         table = self.query_one("#positions_table", DataTable)
-        positions = get_positions()
 
+        self.columns_to_show = [
+            "instrument_name", "instrument_isin", "instrument_ticker", 
+            "opening_date", "total_invested", "latest_price", 
+            "latest_price_date", "remaining_quantity", "pnl", 
+            "pnl_percent", "position_closed", "closing_date",
+        ]
+        table.add_columns(*self.columns_to_show)
+
+        positions = get_positions()
         if positions:
-            columns_to_show = {
-                "instrument_name", "instrument_isin", "instrument_ticker", 
-                "opening_date", "total_invested", "latest_price", 
-                "latest_price_date", "transactions_amount", "closing_date", 
-                "remaining_quantity", "remaining_cost_basis", "realized_pnl", 
-                "unrealized_pnl", "realized_pnl_percent", "unrealized_pnl_percent", 
-                "pnl", "pnl_percent", "position_closed"
-            }
-            table.add_columns(*positions[0].model_dump(include=columns_to_show).keys())
-            for position in positions:
-                table.add_row(*position.model_dump(include=columns_to_show).values(), key=str(position.position_id))
+            self._populate_table(positions, table)
 
     def refresh_table(self, account_id: str = None) -> None:
         """Clear and repopulate the table filtered by account_id."""
+
         table = self.query_one("#positions_table", DataTable)
-        table.clear()
         positions = get_positions(account_id)
         if positions:
-            columns_to_show = {
-                "instrument_name", "instrument_isin", "instrument_ticker",
-                "opening_date", "total_invested", "latest_price",
-                "latest_price_date", "transactions_amount", "closing_date",
-                "remaining_quantity", "remaining_cost_basis", "realized_pnl",
-                "unrealized_pnl", "realized_pnl_percent", "unrealized_pnl_percent",
-                "pnl", "pnl_percent", "position_closed"
-            }
-            for position in positions:
-                table.add_row(*position.model_dump(include=columns_to_show).values(), key=str(position.position_id))
+            self._populate_table(positions, table)
+
+
+    def _populate_table(self, positions, table):
+        
+        table.clear()
+        for position in positions:
+            
+            row_data = position.model_dump(include=set(self.columns_to_show))
+            
+            # Convert pnl to formatted Rich Text (green/red + percentage)
+            pnl_percent_value = row_data["pnl_percent"]
+            pnl_percent_str = f"{pnl_percent_value:.1%}"  # e.g. "17.0%" or "-3.2%"
+            pnl_color = "green" if pnl_percent_value >= 0 else "red"
+            row_data["pnl_percent"] = Text(pnl_percent_str, style=pnl_color)
+            
+            table.add_row(*row_data.values(), key=str(position.position_id))
 
 class PositionsTab(Vertical):
     """The Positions tab content."""

@@ -14,19 +14,8 @@ from sqlalchemy import (
 )
 
 
-# ==========================================================
-# Base
-# ==========================================================
-
 class Base(DeclarativeBase):
     pass
-
-
-# ==========================================================
-# Enums
-# ==========================================================
-
-# Enums are imported from enums.py
 
 
 # ==========================================================
@@ -80,7 +69,7 @@ class Instrument(Base):
     description = Column(Text)
     currency = Column(String, nullable=False)
 
-    prices = relationship("Price", back_populates="instrument", cascade="all")
+    # prices = relationship("Price", back_populates="instrument", cascade="all")
     ohlcvs = relationship("OHLCV", back_populates="instrument", cascade="all")
     positions = relationship("Position", back_populates="instrument", cascade="all")
 
@@ -147,33 +136,6 @@ class Transaction(Base):
         return (
             f"<Transaction id={self.id} account_id={self.account_id} "
             f"type={self.type} amount={self.amount}>"
-        )
-
-
-class Price(Base):
-    __tablename__ = "prices"
-
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    instrument_id = Column(Integer, ForeignKey("instruments.id"), nullable=False)
-    date = Column(UTCDateTime, nullable=False)
-    price = Column(Integer, nullable=False)
-    granularity = Column(String, nullable=False)
-
-    instrument = relationship("Instrument", back_populates="prices")
-
-    __table_args__ = (
-        UniqueConstraint(
-            "instrument_id",
-            "date",
-            "granularity",
-            name="_instrument_date_uc",
-        ),
-    )
-
-    def __repr__(self):
-        return (
-            f"<Price id={self.id} instrument_id={self.instrument_id} "
-            f"date={self.date} price={self.price} granularity={self.granularity}>"
         )
 
 
