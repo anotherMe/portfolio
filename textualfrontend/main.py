@@ -1,7 +1,9 @@
 from textual.app import App, ComposeResult
-from textual.widgets import Footer, Header, Markdown, TabPane, TabbedContent, Select
-from textual.containers import Horizontal
-from textual import on
+from textual.widgets import Footer, Header, TabPane, TabbedContent, Static
+from textual.containers import Vertical
+from textual.binding import Binding
+from textual.events import Resize
+
 from api_service import get_accounts
 
 # Import custom widgets
@@ -11,36 +13,71 @@ from tabs.trades_tab import TradesTab
 from tabs.transactions_tab import TransactionsTab
 from tabs.accounts_tab import AccountsTab
 
-class MyFancyApp(App):
-    """A Textual app to manage stopwatches."""
 
-    BINDINGS = [("d", "toggle_dark", "Toggle dark mode")]
+class StatusBar(Static):
+    """A status bar showing app-wide state (current account, etc.)"""
+
+class MyFancyApp(App):
+    """Portfolio management Textual app."""
+
+    CSS = """
+    #status-bar {
+        background: #1a3a5c;
+        color: #a8d8ff;
+        padding: 0 2;
+        text-align: right;
+    }
+    """
+
+    BINDINGS = [
+        Binding("d", "toggle_dark", "Toggle dark mode"),
+        Binding("a", "cycle_account", "Change Account"),
+    ]
+
+    _accounts: list = []
+    _account_idx: int = 0
 
     def compose(self) -> ComposeResult:
         """Create child widgets for the app."""
         yield Header()
-        
-        with Horizontal(id="header_container"):
-            yield Select([], id="account_selector", allow_blank=True, prompt="All Accounts")
-            
         yield Footer()
+        with Vertical():
+            with TabbedContent(initial="positions"):
+                with TabPane("Positions", id="positions"):
+                    yield PositionsTab()
+                with TabPane("Instruments", id="instruments"):
+                    yield InstrumentsTab()
+                with TabPane("Transactions", id="transactions"):
+                    yield TransactionsTab()
+                with TabPane("Trades", id="trades"):
+                    yield TradesTab()
+                with TabPane("Accounts", id="accounts"):
+                    yield AccountsTab()
+            yield StatusBar("  📂  Account: All Accounts", id="status-bar")
 
-        with TabbedContent(initial="positions"):
+    def on_resize(self, event: Resize) -> None:
+        """Recalculate widget heights on every resize (and initial render)."""
+        try:
+            # Header = 1, Footer = 1, StatusBar = 1 → TabbedContent gets the rest
+            content_height = event.size.height - 3
+            self.query_one(TabbedContent).styles.height = content_height
+            self.query_one("#status-bar", StatusBar).styles.height = 1
+        except Exception:
+            pass
 
-            with TabPane("Positions", id="positions"):
-                yield PositionsTab()
+    def on_mount(self) -> None:
+        """Load accounts on startup."""
+        accounts = get_accounts()
+        self._accounts = [("All Accounts", None)] + [(acc.name, str(acc.id)) for acc in accounts]
+        self._account_idx = 0
+        self._update_status()
 
-            with TabPane("Instruments", id="instruments"):
-                yield InstrumentsTab()
-
-            with TabPane("Transactions", id="transactions"):
-                yield TransactionsTab()
-
-            with TabPane("Trades", id="trades"):
-                yield TradesTab()
-                
-            with TabPane("Accounts", id="accounts"):
-                yield AccountsTab()
+    def _update_status(self) -> None:
+        """Update the status bar with the currently selected account."""
+        name, _ = self._accounts[self._account_idx]
+        self.query_one("#status-bar", StatusBar).update(
+            f"  📂  Account: [bold italic]{name}[/bold italic]"
+        )
 
     def action_toggle_dark(self) -> None:
         """An action to toggle dark mode."""
@@ -48,32 +85,21 @@ class MyFancyApp(App):
             "textual-dark" if self.theme == "textual-light" else "textual-light"
         )
 
-    def on_mount(self) -> None:
-        """Bind account data to selector and align correctly."""
-        accounts = get_accounts()
-        options = [(acc.name, str(acc.id)) for acc in accounts]
-            
-        selector = self.query_one("#account_selector", Select)
-        selector.set_options(options)
-        
-        container = self.query_one("#header_container", Horizontal)
-        container.styles.align = ("right", "middle")
-        container.styles.height = "auto"
-        container.styles.padding = (1, 1)
+    def action_cycle_account(self) -> None:
+        """Cycle to the next account and refresh all data tables."""
+        self._account_idx = (self._account_idx + 1) % len(self._accounts)
+        _, account_id = self._accounts[self._account_idx]
 
-    @on(Select.Changed, "#account_selector")
-    def on_account_select(self, event: Select.Changed) -> None:
-        # None means blank ("All Accounts"), otherwise it's a specific account id string
-        account_id = None if event.value is Select.BLANK else str(event.value)
-        
+        self._update_status()
+
         try:
             self.query_one("PositionsList").refresh_table(account_id)
         except Exception: pass
-            
+
         try:
             self.query_one("TradesList").refresh_table(account_id)
         except Exception: pass
-            
+
         try:
             self.query_one("TransactionsList").refresh_table(account_id)
         except Exception: pass
