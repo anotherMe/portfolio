@@ -66,7 +66,7 @@ class MyPortfolio(App):
                     yield PricesTab()
         yield StatusBar("  📂  Account: All Accounts", id="status-bar")
 
-    async def on_mount(self) -> None:
+    def on_mount(self) -> None:
         """Load accounts on startup."""
 
         log.info("App initialized")

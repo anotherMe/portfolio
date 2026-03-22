@@ -32,7 +32,7 @@ class InstrumentList(Vertical):
         details.styles.height = "1fr"
         yield details
 
-    async def on_mount(self) -> None:
+    def on_mount(self) -> None:
         """Fetch and populate data when the tab is mounted."""
         table = self.query_one("#instruments_table", DataTable)
         instruments = get_instruments()

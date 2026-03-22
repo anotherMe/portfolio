@@ -32,7 +32,7 @@ class TradesList(Vertical):
         details.styles.height = "1fr"
         yield details
 
-    async def on_mount(self) -> None:
+    def on_mount(self) -> None:
         """Fetch and populate data when the tab is mounted."""
     
         table = self.query_one("#trades_table", DataTable)
@@ -44,8 +44,8 @@ class TradesList(Vertical):
         if trades:
             self._populate_table(trades, table)
 
-    @work
-    async def refresh_table(self, account_id: str = None) -> None:
+    @work(exclusive=True, thread=True)
+    def refresh_table(self, account_id: str = None) -> None:
         """Clear and repopulate the table filtered by account_id."""
         table = self.query_one("#trades_table", DataTable)
         trades = get_trades(account_id)

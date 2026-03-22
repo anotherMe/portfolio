@@ -30,7 +30,7 @@ class TransactionsList(Vertical):
         details.styles.height = "1fr"
         yield details
 
-    async def on_mount(self) -> None:
+    def on_mount(self) -> None:
         """Fetch and populate data when the tab is mounted."""
         table = self.query_one("#transactions_table", DataTable)
         transactions = get_transactions()
@@ -41,7 +41,7 @@ class TransactionsList(Vertical):
             for tx in transactions:
                 table.add_row(*tx.model_dump(include=set(columns_to_show)).values(), key=str(tx.id))
 
-    async def refresh_table(self, account_id: str = None) -> None:
+    def refresh_table(self, account_id: str = None) -> None:
         """Clear and repopulate the table filtered by account_id."""
         table = self.query_one("#transactions_table", DataTable)
         table.clear()
