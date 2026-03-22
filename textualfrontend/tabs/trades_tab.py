@@ -1,6 +1,6 @@
 
 from textual.app import ComposeResult
-from textual import on
+from textual import on, work
 from textual.widgets import DataTable, ContentSwitcher, Button, Static
 from textual.containers import Vertical, Horizontal
 from api_service import get_trades
@@ -32,7 +32,7 @@ class TradesList(Vertical):
         details.styles.height = "1fr"
         yield details
 
-    def on_mount(self) -> None:
+    async def on_mount(self) -> None:
         """Fetch and populate data when the tab is mounted."""
     
         table = self.query_one("#trades_table", DataTable)
@@ -44,7 +44,8 @@ class TradesList(Vertical):
         if trades:
             self._populate_table(trades, table)
 
-    def refresh_table(self, account_id: str = None) -> None:
+    @work
+    async def refresh_table(self, account_id: str = None) -> None:
         """Clear and repopulate the table filtered by account_id."""
         table = self.query_one("#trades_table", DataTable)
         trades = get_trades(account_id)

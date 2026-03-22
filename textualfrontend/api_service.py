@@ -19,6 +19,12 @@ def get_instruments() -> list[instrument.InstrumentRead]:
     response.raise_for_status()
     return [instrument.InstrumentRead(**item) for item in response.json()]
 
+def get_instruments_with_last_price() -> list[instrument.InstrumentWithLastPrice]:
+
+    response = requests.get(f"{API_URL}/instruments/with-last-price")
+    response.raise_for_status()
+    return [instrument.InstrumentWithLastPrice(**item) for item in response.json()]
+
 def get_trades(account_id: str = None) -> list[trade.TradeRead]:
     url = f"{API_URL}/trades"
     if account_id and account_id != "all":
@@ -39,3 +45,8 @@ def get_accounts() -> list[account.AccountRead]:
     response = requests.get(f"{API_URL}/accounts")
     response.raise_for_status()
     return [account.AccountRead(**item) for item in response.json()]
+
+def load_prices_for_instrument(instrument_id: int):
+    response = requests.post(f"{API_URL}/prices/load/{instrument_id}")
+    response.raise_for_status()
+    return response.json()

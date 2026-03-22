@@ -27,7 +27,7 @@ class AccountsList(Vertical):
         details.styles.height = "1fr"
         yield details
 
-    def on_mount(self) -> None:
+    async def on_mount(self) -> None:
         """Fetch and populate data when the tab is mounted."""
         table = self.query_one("#accounts_table", DataTable)
         accounts = get_accounts()

@@ -2,7 +2,8 @@
 from typing import List
 from sqlalchemy.orm import Session
 from repositories import instruments_repository
-from schemas.instrument import InstrumentRead
+from repositories import ohlcvs_repository
+from schemas.instrument import InstrumentRead, InstrumentWithLastPrice
 
 import logging
 
@@ -27,6 +28,34 @@ def get_instruments(session: Session) -> List[InstrumentRead]:
             category=instrument.category,
             description=instrument.description,
             currency=instrument.currency,
+        )
+
+        dtos.append(dto)     
+    
+    return dtos
+
+
+def get_instruments_with_last_price(session: Session) -> List[InstrumentWithLastPrice]:
+    """
+    Retrieve instruments with last price date.
+    """
+    all_instruments = instruments_repository.get_instruments(session)
+
+    dtos = []
+    for instrument in all_instruments:
+        
+        last_price_date = ohlcvs_repository.get_latest_timestamp(session, instrument.id)
+        
+        dto = InstrumentWithLastPrice(
+            id=instrument.id,
+            name=instrument.name,
+            ticker=instrument.ticker,
+            isin=instrument.isin,   
+            name_long=instrument.name_long,
+            category=instrument.category,
+            description=instrument.description,
+            currency=instrument.currency,
+            last_price_date=last_price_date,
         )
 
         dtos.append(dto)     

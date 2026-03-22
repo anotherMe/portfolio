@@ -1,8 +1,11 @@
+import logging
+log = logging.getLogger(__name__)
+
 from textual.app import App, ComposeResult
 from textual.widgets import Footer, Header, TabPane, TabbedContent, Static
 from textual.containers import Vertical
 from textual.binding import Binding
-from textual.events import Resize
+from textual.logging import TextualHandler
 
 from api_service import get_accounts
 
@@ -12,12 +15,17 @@ from tabs.positions_tab import PositionsTab
 from tabs.trades_tab import TradesTab
 from tabs.transactions_tab import TransactionsTab
 from tabs.accounts_tab import AccountsTab
+from tabs.prices_tab import PricesTab
 
+logging.basicConfig(
+    level="DEBUG",
+    handlers=[TextualHandler()],
+)
 
 class StatusBar(Static):
     """A status bar showing app-wide state (current account, etc.)"""
 
-class MyFancyApp(App):
+class MyPortfolio(App):
     """Portfolio management Textual app."""
 
     CSS = """
@@ -43,7 +51,7 @@ class MyFancyApp(App):
         yield Header()
         yield Footer()
         with Vertical():
-            with TabbedContent(initial="positions"):
+            with TabbedContent(initial="prices"):
                 with TabPane("Positions", id="positions"):
                     yield PositionsTab()
                 with TabPane("Instruments", id="instruments"):
@@ -54,10 +62,15 @@ class MyFancyApp(App):
                     yield TradesTab()
                 with TabPane("Accounts", id="accounts"):
                     yield AccountsTab()
+                with TabPane("Prices", id="prices"):
+                    yield PricesTab()
         yield StatusBar("  📂  Account: All Accounts", id="status-bar")
 
-    def on_mount(self) -> None:
+    async def on_mount(self) -> None:
         """Load accounts on startup."""
+
+        log.info("App initialized")
+
         accounts = get_accounts()
         self._accounts = [("All Accounts", None)] + [(acc.name, str(acc.id)) for acc in accounts]
         self._account_idx = 0
@@ -97,5 +110,5 @@ class MyFancyApp(App):
 
 
 if __name__ == "__main__":
-    app = MyFancyApp()
+    app = MyPortfolio()
     app.run()

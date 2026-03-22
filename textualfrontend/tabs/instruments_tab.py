@@ -2,7 +2,9 @@ from textual.app import ComposeResult
 from textual import on
 from textual.widgets import DataTable, ContentSwitcher, Button, Static
 from textual.containers import Vertical, Horizontal
+
 from api_service import get_instruments
+
 
 class InstrumentEdit(Vertical):
     """A custom widget representing the edit view."""
@@ -30,7 +32,7 @@ class InstrumentList(Vertical):
         details.styles.height = "1fr"
         yield details
 
-    def on_mount(self) -> None:
+    async def on_mount(self) -> None:
         """Fetch and populate data when the tab is mounted."""
         table = self.query_one("#instruments_table", DataTable)
         instruments = get_instruments()

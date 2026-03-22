@@ -1,5 +1,5 @@
 from textual.app import ComposeResult
-from textual import on
+from textual import on, work
 from textual.widgets import DataTable, ContentSwitcher, Button, Static
 from textual.containers import Vertical, Horizontal
 from api_service import get_positions
@@ -34,7 +34,7 @@ class PositionsList(Vertical):
         details.styles.height = "1fr"
         yield details
 
-    def on_mount(self) -> None:
+    async def on_mount(self) -> None:
         """Fetch and populate data when the tab is mounted."""
         
         table = self.query_one("#positions_table", DataTable)
@@ -51,18 +51,19 @@ class PositionsList(Vertical):
         if positions:
             self._populate_table(positions, table)
 
-    def refresh_table(self, account_id: str = None) -> None:
+    @work
+    async def refresh_table(self, account_id: str = None) -> None:
         """Clear and repopulate the table filtered by account_id."""
 
         table = self.query_one("#positions_table", DataTable)
         positions = get_positions(account_id)
+        table.clear()
         if positions:
             self._populate_table(positions, table)
 
 
     def _populate_table(self, positions, table):
         
-        table.clear()
         for position in positions:
             
             row_data = position.model_dump(include=set(self.columns_to_show))

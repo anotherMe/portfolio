@@ -1,6 +1,7 @@
 
 from pydantic import BaseModel, ConfigDict
 from typing import Optional
+from datetime import datetime
 
 
 class InstrumentBase(BaseModel):
@@ -21,3 +22,7 @@ class InstrumentRead(InstrumentBase):
     id: int
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class InstrumentWithLastPrice(InstrumentRead):
+    last_price_date: Optional[datetime] = None
