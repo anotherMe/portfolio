@@ -1,7 +1,7 @@
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routes.portfolio import router as portfolio_router
+from backend.routes.positions import router as portfolio_router
 from routes.instruments import router as instruments_router
 from routes.trades import router as trades_router
 from routes.transactions import router as transactions_router
