@@ -126,7 +126,7 @@ def _apply_fifo(session: Session, positions: List[Position]) -> List[PositionSum
 
     return position_dtos
 
-def get_positions_summary(session: Session, account_id: int = None, include_closed=True, include_open=True) -> List[PositionSummary]:
+def get_positions_summary(session: Session, account_id: int = None, include_closed: bool = True, include_open: bool = True) -> List[PositionSummary]:
     """
     Retrieve positions summary.
     """

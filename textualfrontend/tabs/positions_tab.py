@@ -1,9 +1,54 @@
+
 from textual.app import ComposeResult
 from textual import on, work
-from textual.widgets import DataTable, ContentSwitcher, Button, Static
-from textual.containers import Vertical, Horizontal
+from textual.widgets import DataTable, ContentSwitcher, Button, Static, Input, Select
+from textual.containers import Right, Vertical, Horizontal
+from textual.binding import Binding
+from textual.screen import ModalScreen
 from api_service import get_positions
 from rich.text import Text
+
+import logging
+log = logging.getLogger(__name__)
+
+
+class Filter():
+    """A simple class to hold filter values for positions."""
+    def __init__(self, instrument_name: str = "", isin: str = "", ticker: str = ""):
+        self.instrument_name = instrument_name
+        self.isin = isin
+        self.ticker = ticker
+        self.position_status = "all"  # "open", "closed", or "all"
+
+class PositionFilter(ModalScreen[Filter]):
+    """A collapsible widget for filtering positions."""
+
+    def compose(self) -> ComposeResult:
+        with Vertical():
+            yield Static("Filter Positions", id="filter_title")
+            yield Select(   
+                (("Open", "open"), ("Closed", "closed"), ("All", "all")),
+                value="all",
+                id="filter_position_status"
+            )
+            yield Input(placeholder="Filter by Instrument Name", id="filter_instrument_name")
+            yield Input(placeholder="Filter by Ticker", id="filter_ticker")
+            yield Input(placeholder="Filter by ISIN", id="filter_isin")
+            with Right():
+                yield Button("Clear filters", id="clear_filters", variant="primary")
+                yield Button("Apply filters", id="apply_filters", variant="primary")
+
+    def on_button_pressed(self, event: Button.Pressed) -> None:
+        """Handle button presses in the filter modal."""
+
+        filter = Filter()
+        if event.button.id == "apply_filters":
+            filter.instrument_name = self.query_one("#filter_instrument_name", Input).value
+            filter.isin = self.query_one("#filter_isin", Input).value
+            filter.ticker = self.query_one("#filter_ticker", Input).value
+            filter.position_status = self.query_one("#filter_position_status", Select).value
+        
+        self.dismiss(filter)  # Dismiss with empty filter to indicate clearing
 
 
 class PositionEdit(Vertical):
@@ -24,8 +69,13 @@ class PositionDetails(Horizontal):
 
 class PositionsList(Vertical):
     """Positions list (DataTable) on top half and the details view on the bottom half"""
-    
+
     def compose(self) -> ComposeResult:
+
+        # with Collapsible(title="Filter", id="filters_collapsible", collapsed=True):
+        #     filter = PositionFilter(id="position_filter")
+        #     yield filter    
+
         table = DataTable(id="positions_table", cursor_type="row")
         table.styles.height = "2fr"
         yield table
@@ -52,11 +102,11 @@ class PositionsList(Vertical):
             self._populate_table(positions, table)
 
     @work(exclusive=True, thread=True)
-    def refresh_table(self, account_id: str = None) -> None:
+    def refresh_table(self, account_id: int = None, filter: Filter = None) -> None:
         """Clear and repopulate the table filtered by account_id."""
 
         table = self.query_one("#positions_table", DataTable)
-        positions = get_positions(account_id)
+        positions = get_positions(account_id=account_id, include_open=(filter.position_status in ["open", "all"]), include_closed=(filter.position_status in ["closed", "all"]))
         table.clear()
         if positions:
             self._populate_table(positions, table)
@@ -78,6 +128,10 @@ class PositionsList(Vertical):
 
 class PositionsTab(Vertical):
     """The Positions tab content."""
+
+    BINDINGS = [
+        Binding("f", "filter", "Show Filters"),
+    ]
 
     def compose(self) -> ComposeResult:
         with ContentSwitcher(id="positions_switcher", initial="positions_list"):
@@ -115,3 +169,18 @@ class PositionsTab(Vertical):
         switcher = self.query_one("#positions_switcher", ContentSwitcher)
         switcher.current = "positions_list"
         self.query_one("#positions_list", PositionsList).focus()
+
+    def action_filter(self) -> None:
+        """Show the filter modal"""
+        # log.info("Toggling filter collapsible")
+        # collapsible = self.query_one("#filters_collapsible", Collapsible)
+        # collapsible.collapsed = not collapsible.collapsed
+
+        def check_quit(filter: Filter) -> None:
+            """Called when QuitScreen is dismissed."""
+            if filter:
+                log.info(f"Filters applied: Instrument Name: {filter.instrument_name}, ISIN: {filter.isin}, Ticker: {filter.ticker}, Position Status: {filter.position_status}")
+                # TODO: Apply filters to the PositionsList based on the values entered in the PositionFilter screen
+                pass
+
+        self.app.push_screen(PositionFilter(), check_quit)

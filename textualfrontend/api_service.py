@@ -5,11 +5,14 @@ from schemas import portfolio, instrument, trade, transaction, account
 
 API_URL = "http://localhost:8000"
 
-def get_positions(account_id: str = None) -> list[portfolio.PositionSummary]:
-    url = f"{API_URL}/portfolio"
-    if account_id and account_id != "all":
-        url += f"?account_id={account_id}"
-    response = requests.get(url)
+def get_positions(account_id: int = None, include_open: bool = True, include_closed: bool = True) -> list[portfolio.PositionSummary]:
+    
+    url = f"{API_URL}/positions"
+    params = {}
+    params["account_id"] = account_id
+    params["include_open"] = include_open
+    params["include_closed"] = include_closed
+    response = requests.get(url, params=params)
     response.raise_for_status()
     return [portfolio.PositionSummary(**item) for item in response.json()]
 

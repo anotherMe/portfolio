@@ -51,7 +51,7 @@ class MyPortfolio(App):
         yield Header()
         yield Footer()
         with Vertical():
-            with TabbedContent(initial="prices"):
+            with TabbedContent(initial="positions"):
                 with TabPane("Positions", id="positions"):
                     yield PositionsTab()
                 with TabPane("Instruments", id="instruments"):
@@ -91,6 +91,7 @@ class MyPortfolio(App):
 
     def action_cycle_account(self) -> None:
         """Cycle to the next account and refresh all data tables."""
+        
         self._account_idx = (self._account_idx + 1) % len(self._accounts)
         _, account_id = self._accounts[self._account_idx]
 

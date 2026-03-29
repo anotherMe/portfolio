@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
+
 from typing import List
 from datetime import datetime, timedelta
 
@@ -24,7 +25,7 @@ def load_prices_for_instrument(instrument_id: int, session: Session = Depends(ge
 
     last_date = get_latest_timestamp(session, instrument_id)
     if last_date:
-        start_date = last_date + timedelta(days=1)  # Start from next day
+        start_date = last_date
     else:
         start_date = datetime.now() - timedelta(days=365)  # If no data, load last year
 
