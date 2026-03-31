@@ -39,6 +39,15 @@ class InstrumentPricesUpdateStopped(Message):
 class PricesTab(Vertical):
     """The Prices tab content."""
 
+    DEFAULT_CSS = """
+    PricesTab Right {
+        margin-top: 1;
+    }
+    #start_loading {
+        margin-right: 1;
+    }
+    """
+
     BINDINGS = [
         Binding("x", "stop_loading", "Stop loading prices"),
     ]
@@ -75,7 +84,6 @@ class PricesTab(Vertical):
             with Right():
                 yield Button("Start Price Loading", id="start_loading", variant="primary")
             yield ProgressBar(id="progress_bar", total=0)
-            yield Static("Current: None", id="current_instrument")
             yield Static("Status: Ready", id="status_message")
 
     def on_mount(self) -> None:
