@@ -119,7 +119,7 @@ class PricesTab(Vertical):
                 row_data = [
                     instrument.name,
                     instrument.ticker,
-                    str(instrument.last_price_date) if instrument.last_price_date else "Never"
+                    instrument.last_price_date.strftime("%Y-%m-%d %H:%M") if instrument.last_price_date else "Never"
                 ]
                 table.add_row(*row_data, key=str(instrument.id))
 

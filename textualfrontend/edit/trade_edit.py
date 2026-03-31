@@ -66,8 +66,8 @@ class TradeEdit(ModalScreen):
         title = "Edit Trade" if self._trade else "Add Trade"
         with Vertical():
             yield Static(title, classes="te-title")
-            yield Label("Date (YYYY-MM-DD)")
-            yield Input(placeholder="YYYY-MM-DD", id="te-date")
+            yield Label("Date & Time (YYYY-MM-DD HH:MM)")
+            yield Input(placeholder="YYYY-MM-DD HH:MM", id="te-date")
             yield Label("Type")
             yield Select(
                 [(TradeType.BUY.value.capitalize(), TradeType.BUY.value),
@@ -87,13 +87,13 @@ class TradeEdit(ModalScreen):
 
     def on_mount(self) -> None:
         if self._trade:
-            self.query_one("#te-date", Input).value = self._trade.date.strftime("%Y-%m-%d")
+            self.query_one("#te-date", Input).value = self._trade.date.strftime("%Y-%m-%d %H:%M")
             self.query_one("#te-type", Select).value = self._trade.type.value
             self.query_one("#te-quantity", Input).value = str(self._trade.quantity)
             self.query_one("#te-price", Input).value = str(self._trade.price)
             self.query_one("#te-description", Input).value = self._trade.description or ""
         else:
-            self.query_one("#te-date", Input).value = datetime.now().strftime("%Y-%m-%d")
+            self.query_one("#te-date", Input).value = datetime.now().strftime("%Y-%m-%d %H:%M")
 
     @on(Button.Pressed, "#te-cancel-btn")
     def on_cancel(self) -> None:
@@ -116,9 +116,9 @@ class TradeEdit(ModalScreen):
         price_str = self.query_one("#te-price", Input).value.strip()
 
         try:
-            datetime.strptime(date_str, "%Y-%m-%d")
+            datetime.strptime(date_str, "%Y-%m-%d %H:%M")
         except ValueError:
-            return "Invalid date. Use YYYY-MM-DD format."
+            return "Invalid date/time. Use YYYY-MM-DD HH:MM format."
 
         try:
             qty = int(qty_str)
@@ -147,7 +147,7 @@ class TradeEdit(ModalScreen):
         price = float(self.query_one("#te-price", Input).value.strip())
         desc = self.query_one("#te-description", Input).value.strip() or None
 
-        trade_date = datetime.strptime(date_str, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+        trade_date = datetime.strptime(date_str, "%Y-%m-%d %H:%M").replace(tzinfo=timezone.utc)
 
         try:
             if self._trade:

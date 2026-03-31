@@ -45,7 +45,7 @@ class TradesTab(Vertical):
         table.clear()
         for t in trades:
             table.add_row(
-                t.date.strftime("%Y-%m-%d"),
+                t.date.strftime("%Y-%m-%d %H:%M"),
                 t.type.value.upper(),
                 str(t.quantity),
                 f"{t.price:,.4f}",
@@ -75,7 +75,7 @@ class TradesTab(Vertical):
             trade = self._selected
             self.app.push_screen(
                 ConfirmScreen(
-                    f"Delete trade on {trade.date.strftime('%Y-%m-%d')} "
+                    f"Delete trade on {trade.date.strftime('%Y-%m-%d %H:%M')} "
                     f"({trade.type.value.upper()} {trade.quantity} @ {trade.price:,.4f})?"
                 ),
                 lambda confirmed: self._delete(trade.id) if confirmed else None,

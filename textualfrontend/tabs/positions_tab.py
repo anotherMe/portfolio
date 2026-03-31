@@ -167,6 +167,11 @@ class PositionsList(Vertical):
 
             row_data = position.model_dump(include=set(self.columns_to_show))
 
+            # Format date fields
+            for date_field in ("opening_date", "closing_date", "latest_price_date"):
+                val = row_data.get(date_field)
+                row_data[date_field] = val.strftime("%Y-%m-%d %H:%M") if val else "—"
+
             # Convert pnl to formatted Rich Text (green/red + percentage)
             pnl_percent_value = row_data["pnl_percent"]
             pnl_percent_str = f"{pnl_percent_value:.1%}"  # e.g. "17.0%" or "-3.2%"

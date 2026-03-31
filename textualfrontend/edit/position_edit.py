@@ -58,7 +58,7 @@ class TradeActionsModal(ModalScreen):
         t = self._trade
         with Vertical():
             yield Static(
-                f"[bold]{t.date.strftime('%Y-%m-%d')}[/bold]  "
+                f"[bold]{t.date.strftime('%Y-%m-%d %H:%M')}[/bold]  "
                 f"{t.type.value.upper()}  "
                 f"Qty: [bold]{t.quantity}[/bold]  "
                 f"@ [bold]{t.price:,.4f}[/bold]",
@@ -119,7 +119,7 @@ class TransactionActionsModal(ModalScreen):
         tx = self._transaction
         with Vertical():
             yield Static(
-                f"[bold]{tx.date.strftime('%Y-%m-%d')}[/bold]  "
+                f"[bold]{tx.date.strftime('%Y-%m-%d %H:%M')}[/bold]  "
                 f"{tx.type.value.upper()}  "
                 f"Amount: [bold]{tx.amount:,.2f}[/bold]",
                 id="modal-info",
@@ -337,7 +337,7 @@ class PositionEdit(Vertical):
         table.clear()
         for t in trades:
             table.add_row(
-                t.date.strftime("%Y-%m-%d"),
+                t.date.strftime("%Y-%m-%d %H:%M"),
                 t.type.value.upper(),
                 str(t.quantity),
                 f"{t.price:,.4f}",
@@ -352,7 +352,7 @@ class PositionEdit(Vertical):
         table.clear()
         for t in transactions:
             table.add_row(
-                t.date.strftime("%Y-%m-%d"),
+                t.date.strftime("%Y-%m-%d %H:%M"),
                 t.type.value.upper(),
                 f"{t.amount:,.2f}",
                 t.description or "",
@@ -444,7 +444,7 @@ class PositionEdit(Vertical):
             self.app.push_screen(
                 ConfirmScreen(
                     f"Delete {tx.type.value.upper()} transaction on "
-                    f"{tx.date.strftime('%Y-%m-%d')} ({tx.amount:,.2f})?"
+                    f"{tx.date.strftime('%Y-%m-%d %H:%M')} ({tx.amount:,.2f})?"
                 ),
                 lambda confirmed: self._delete_transaction(tx.id) if confirmed else None,
             )

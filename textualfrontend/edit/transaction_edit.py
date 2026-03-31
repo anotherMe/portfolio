@@ -67,8 +67,8 @@ class TransactionEdit(ModalScreen):
         title = "Edit Transaction" if self._transaction else "Add Transaction"
         with Vertical():
             yield Static(title, classes="txe-title")
-            yield Label("Date (YYYY-MM-DD)")
-            yield Input(placeholder="YYYY-MM-DD", id="txe-date")
+            yield Label("Date & Time (YYYY-MM-DD HH:MM)")
+            yield Input(placeholder="YYYY-MM-DD HH:MM", id="txe-date")
             yield Label("Type")
             yield Select(
                 [(t.value.upper(), t.value) for t in TransactionType],
@@ -85,12 +85,12 @@ class TransactionEdit(ModalScreen):
 
     def on_mount(self) -> None:
         if self._transaction:
-            self.query_one("#txe-date", Input).value = self._transaction.date.strftime("%Y-%m-%d")
+            self.query_one("#txe-date", Input).value = self._transaction.date.strftime("%Y-%m-%d %H:%M")
             self.query_one("#txe-type", Select).value = self._transaction.type.value
             self.query_one("#txe-amount", Input).value = str(self._transaction.amount)
             self.query_one("#txe-description", Input).value = self._transaction.description or ""
         else:
-            self.query_one("#txe-date", Input).value = datetime.now().strftime("%Y-%m-%d")
+            self.query_one("#txe-date", Input).value = datetime.now().strftime("%Y-%m-%d %H:%M")
 
     @on(Button.Pressed, "#txe-cancel-btn")
     def on_cancel(self) -> None:
@@ -112,9 +112,9 @@ class TransactionEdit(ModalScreen):
         amount_str = self.query_one("#txe-amount", Input).value.strip()
 
         try:
-            datetime.strptime(date_str, "%Y-%m-%d")
+            datetime.strptime(date_str, "%Y-%m-%d %H:%M")
         except ValueError:
-            return "Invalid date. Use YYYY-MM-DD format."
+            return "Invalid date/time. Use YYYY-MM-DD HH:MM format."
 
         try:
             amount = float(amount_str)
@@ -135,7 +135,7 @@ class TransactionEdit(ModalScreen):
         amount = float(self.query_one("#txe-amount", Input).value.strip())
         desc = self.query_one("#txe-description", Input).value.strip() or None
 
-        tx_date = datetime.strptime(date_str, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+        tx_date = datetime.strptime(date_str, "%Y-%m-%d %H:%M").replace(tzinfo=timezone.utc)
 
         try:
             if self._transaction:

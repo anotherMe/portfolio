@@ -45,7 +45,7 @@ class TransactionsTab(Vertical):
         table.clear()
         for t in transactions:
             table.add_row(
-                t.date.strftime("%Y-%m-%d"),
+                t.date.strftime("%Y-%m-%d %H:%M"),
                 t.type.value.upper(),
                 f"{t.amount:,.2f}",
                 t.description or "",
@@ -75,7 +75,7 @@ class TransactionsTab(Vertical):
             self.app.push_screen(
                 ConfirmScreen(
                     f"Delete {tx.type.value.upper()} transaction on "
-                    f"{tx.date.strftime('%Y-%m-%d')} ({tx.amount:,.2f})?"
+                    f"{tx.date.strftime('%Y-%m-%d %H:%M')} ({tx.amount:,.2f})?"
                 ),
                 lambda confirmed: self._delete(tx.id) if confirmed else None,
             )
