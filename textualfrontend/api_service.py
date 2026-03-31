@@ -1,6 +1,8 @@
 
 import requests
 from schemas import portfolio, instrument, trade, transaction, account
+from schemas.trade import TradeCreate, TradeUpdate, TradeRead
+from schemas.transaction import TransactionCreate, TransactionUpdate, TransactionRead
 
 
 API_URL = "http://localhost:8000"
@@ -28,6 +30,16 @@ def get_instruments_with_last_price() -> list[instrument.InstrumentWithLastPrice
     response.raise_for_status()
     return [instrument.InstrumentWithLastPrice(**item) for item in response.json()]
 
+def get_trades_for_position(position_id: int) -> list[trade.TradeRead]:
+    response = requests.get(f"{API_URL}/trades", params={"position_id": position_id})
+    response.raise_for_status()
+    return [trade.TradeRead(**item) for item in response.json()]
+
+def get_transactions_for_position(position_id: int) -> list[transaction.TransactionRead]:
+    response = requests.get(f"{API_URL}/transactions", params={"position_id": position_id})
+    response.raise_for_status()
+    return [transaction.TransactionRead(**item) for item in response.json()]
+
 def get_trades(account_id: str = None) -> list[trade.TradeRead]:
     url = f"{API_URL}/trades"
     if account_id and account_id != "all":
@@ -53,3 +65,39 @@ def load_prices_for_instrument(instrument_id: int):
     response = requests.post(f"{API_URL}/prices/load/{instrument_id}")
     response.raise_for_status()
     return response.json()
+
+
+def create_trade(data: TradeCreate) -> TradeRead:
+    response = requests.post(f"{API_URL}/trades/", json=data.model_dump(mode="json"))
+    response.raise_for_status()
+    return TradeRead(**response.json())
+
+
+def update_trade(trade_id: int, data: TradeUpdate) -> TradeRead:
+    payload = {k: v for k, v in data.model_dump(mode="json").items() if v is not None}
+    response = requests.put(f"{API_URL}/trades/{trade_id}", json=payload)
+    response.raise_for_status()
+    return TradeRead(**response.json())
+
+
+def delete_trade(trade_id: int) -> None:
+    response = requests.delete(f"{API_URL}/trades/{trade_id}")
+    response.raise_for_status()
+
+
+def create_transaction(data: TransactionCreate) -> TransactionRead:
+    response = requests.post(f"{API_URL}/transactions/", json=data.model_dump(mode="json"))
+    response.raise_for_status()
+    return TransactionRead(**response.json())
+
+
+def update_transaction(transaction_id: int, data: TransactionUpdate) -> TransactionRead:
+    payload = {k: v for k, v in data.model_dump(mode="json").items() if v is not None}
+    response = requests.put(f"{API_URL}/transactions/{transaction_id}", json=payload)
+    response.raise_for_status()
+    return TransactionRead(**response.json())
+
+
+def delete_transaction(transaction_id: int) -> None:
+    response = requests.delete(f"{API_URL}/transactions/{transaction_id}")
+    response.raise_for_status()

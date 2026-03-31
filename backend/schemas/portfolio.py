@@ -5,7 +5,8 @@ from datetime import datetime
 class PositionSummary(BaseModel):
     """Data Transfer Object for Position summary with FIFO PnL."""
     position_id: int
-    
+    account_id: int = 0
+
     instrument_id: int = 0
     instrument_name: str = ""
     instrument_isin: str = ""

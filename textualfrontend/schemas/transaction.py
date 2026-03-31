@@ -18,6 +18,13 @@ class TransactionCreate(TransactionBase):
     pass
 
 
+class TransactionUpdate(BaseModel):
+    date: Optional[datetime] = None
+    type: Optional[TransactionType] = None
+    amount: Optional[float] = None
+    description: Optional[str] = None
+
+
 class TransactionRead(TransactionBase):
     id: int
 

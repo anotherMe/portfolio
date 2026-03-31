@@ -18,6 +18,14 @@ class TradeCreate(TradeBase):
     pass
 
 
+class TradeUpdate(BaseModel):
+    date: Optional[datetime] = None
+    type: Optional[TradeType] = None
+    quantity: Optional[int] = None
+    price: Optional[float] = None
+    description: Optional[str] = None
+
+
 class TradeRead(TradeBase):
     id: int
 

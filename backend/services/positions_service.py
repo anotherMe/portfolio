@@ -1,6 +1,6 @@
 from collections import deque
 from typing import Optional, List
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy.orm import Session
 from db.models import Position
@@ -45,6 +45,7 @@ def _apply_fifo(session: Session, positions: List[Position]) -> List[PositionSum
         # Initialize DTO with basic info
         dto = PositionSummary(
             position_id=position.id,
+            account_id=position.account_id,
             instrument_id=position.instrument_id if position.instrument else 0,
             instrument_name=position.instrument.name if position.instrument else "",
             instrument_isin=position.instrument.isin if position.instrument else "",
@@ -143,6 +144,6 @@ def get_positions_summary(session: Session, account_id: int = None, include_clos
             filtered_dtos.append(dto)
             
     # Sort by opening date (ascending)
-    filtered_dtos.sort(key=lambda x: x.opening_date or datetime.min)
+    filtered_dtos.sort(key=lambda x: x.opening_date or datetime.min.replace(tzinfo=timezone.utc))
     
     return filtered_dtos
