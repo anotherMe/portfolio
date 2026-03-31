@@ -1,5 +1,6 @@
 textual
 pydantic
 httpx
+requests
 # for development
 textual-dev

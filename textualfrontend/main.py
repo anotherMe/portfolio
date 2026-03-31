@@ -98,7 +98,7 @@ class MyPortfolio(App):
         self._update_status()
 
         try:
-            self.query_one("PositionsList").refresh_table(account_id)
+            self.query_one("PositionsTab").reload(account_id)
         except Exception: pass
 
         try:
