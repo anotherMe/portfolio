@@ -270,6 +270,7 @@ class PositionEdit(Vertical):
 
         transactions_table = self.query_one("#pe-transactions-table", DataTable)
         transactions_table.add_columns("Date", "Type", "Amount", "Description")
+        
 
     # ──────────────────────────────────────────────────────────────────
     # Public API

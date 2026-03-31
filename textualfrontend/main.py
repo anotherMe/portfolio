@@ -102,11 +102,11 @@ class MyPortfolio(App):
         except Exception: pass
 
         try:
-            self.query_one("TradesList").refresh_table(account_id)
+            self.query_one("TradesTab")._fetch_data()
         except Exception: pass
 
         try:
-            self.query_one("TransactionsList").refresh_table(account_id)
+            self.query_one("TransactionsTab")._fetch_data()
         except Exception: pass
 
 

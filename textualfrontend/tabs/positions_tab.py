@@ -127,6 +127,7 @@ class PositionsTab(Vertical):
 
     BINDINGS = [
         Binding("f", "filter", "Show Filters"),
+        Binding("escape", "back_to_list", "Back to List", show=False),
     ]
 
     def compose(self) -> ComposeResult:
@@ -173,9 +174,13 @@ class PositionsTab(Vertical):
     @on(Button.Pressed, "#position-back-button")
     def show_position_list(self) -> None:
         """Triggered when the 'Back' button in positions tab is clicked."""
+        self.action_back_to_list()
+
+    def action_back_to_list(self) -> None:
         switcher = self.query_one("#positions_switcher", ContentSwitcher)
-        switcher.current = "positions_list"
-        self.query_one("#positions_list", PositionsList).focus()
+        if switcher.current != "positions_list":
+            switcher.current = "positions_list"
+            self.query_one("#positions_list", PositionsList).focus()
 
     def action_filter(self) -> None:
         """Show the filter modal"""

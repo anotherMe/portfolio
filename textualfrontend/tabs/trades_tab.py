@@ -1,98 +1,96 @@
+from __future__ import annotations
 
 from textual.app import ComposeResult
 from textual import on, work
-from textual.widgets import DataTable, ContentSwitcher, Button, Static
-from textual.containers import Vertical, Horizontal
+from textual.widgets import DataTable
+from textual.containers import Vertical
+
+from schemas.trade import TradeRead
 from api_service import get_trades
+import api_service
+from edit.position_edit import TradeActionsModal
+from edit.trade_edit import TradeEdit
+from widgets.confirm_screen import ConfirmScreen
 
+import logging
+log = logging.getLogger(__name__)
 
-class TradeEdit(Vertical):
-    """A custom widget representing the edit view."""
-    def compose(self) -> ComposeResult:
-        # Placeholder for our details
-        yield Static("No Trade selected", id="trade-edit-content")
-        # A button to go back to the datatable
-        yield Button("← Back to List", id="trade-back-button", variant="primary")
-
-class TradeDetails(Horizontal):
-    """A custom widget representing the details view."""
-    def compose(self) -> ComposeResult:
-        # Placeholder for our details
-        yield Static("Trade Details Here", id="trade-details-content")
-
-class TradesList(Vertical):
-    """Trades list (DataTable) on top half and the details view on the bottom half"""
-    
-    def compose(self) -> ComposeResult:
-        table = DataTable(id="trades_table", cursor_type="row")
-        table.styles.height = "2fr"
-        yield table
-
-        details = TradeDetails(id="trade_details")
-        details.styles.height = "1fr"
-        yield details
-
-    def on_mount(self) -> None:
-        """Fetch and populate data when the tab is mounted."""
-    
-        table = self.query_one("#trades_table", DataTable)
-        
-        self.columns_to_show = ["date", "type", "quantity", "price", "description"]
-        table.add_columns(*self.columns_to_show)
-
-        trades = get_trades()
-        if trades:
-            self._populate_table(trades, table)
-
-    @work(exclusive=True, thread=True)
-    def refresh_table(self, account_id: str = None) -> None:
-        """Clear and repopulate the table filtered by account_id."""
-        table = self.query_one("#trades_table", DataTable)
-        trades = get_trades(account_id)
-        if trades:
-            self._populate_table(trades, table)
-
-    def _populate_table(self, trades, table):
-        table.clear()
-        for trade in trades:
-            table.add_row(*trade.model_dump(include=set(self.columns_to_show)).values(), key=str(trade.id))
 
 class TradesTab(Vertical):
     """The Trades tab content."""
 
     def compose(self) -> ComposeResult:
-        with ContentSwitcher(id="trades_switcher", initial="trades_list"):
-            yield TradesList(id="trades_list")
-            yield TradeEdit(id="trade_edit")
+        yield DataTable(id="trades_table", cursor_type="row")
+
+    def on_mount(self) -> None:
+        table = self.query_one("#trades_table", DataTable)
+        table.add_columns("Date", "Type", "Qty", "Price", "Description")
+        self._trades: dict[str, TradeRead] = {}
+        self._selected: TradeRead | None = None
+        self._fetch_data()
+
+    # ── Data ──────────────────────────────────────────────────────────
+
+    @work(thread=True)
+    def _fetch_data(self) -> None:
+        try:
+            trades = get_trades()
+        except Exception as exc:
+            log.error(f"Failed to load trades: {exc}")
+            trades = []
+        self.app.call_from_thread(self._populate, trades)
+
+    def _populate(self, trades: list[TradeRead]) -> None:
+        self._trades = {str(t.id): t for t in trades}
+        self._selected = None
+        table = self.query_one("#trades_table", DataTable)
+        table.clear()
+        for t in trades:
+            table.add_row(
+                t.date.strftime("%Y-%m-%d"),
+                t.type.value.upper(),
+                str(t.quantity),
+                f"{t.price:,.4f}",
+                t.description or "",
+                key=str(t.id),
+            )
+
+    # ── Row selection ──────────────────────────────────────────────────
 
     @on(DataTable.RowSelected, "#trades_table")
-    def on_trades_table_row_selected(self, event: DataTable.RowSelected) -> None:
-        """Handle a row being selected (e.g., by pressing Enter)."""
-        table = event.data_table
-        row_key = event.row_key
-        trade_id = row_key.value
-        row_data = table.get_row(row_key)
-        
-        edit_label = self.query_one("#trade-edit-content", Static)
-        edit_label.update(f"Editing / Viewing details for:\n\n**ID:** {trade_id}\n**Data:** {row_data}")
-        
-        switcher = self.query_one("#trades_switcher", ContentSwitcher)
-        switcher.current = "trade_edit"
+    def on_row_selected(self, event: DataTable.RowSelected) -> None:
+        trade = self._trades.get(str(event.row_key.value)) if event.row_key else None
+        if trade is None:
+            return
+        self._selected = trade
+        self.app.push_screen(TradeActionsModal(trade), self._on_action)
 
-    @on(DataTable.RowHighlighted, "#trades_table")
-    def on_data_table_row_highlighted(self, event: DataTable.RowHighlighted ) -> None:
-        """Handle a row being highlighted (e.g., by pressing arrow keys)."""
-        table = event.data_table
-        row_key = event.row_key
-        trade_id = row_key.value
-        row_data = table.get_row(row_key)
-        
-        details_label = self.query_one("#trade-details-content", Static)
-        details_label.update(f"Editing / Viewing details for:\n\n**ID:** {trade_id}\n**Data:** {row_data}")
+    # ── Action callbacks ───────────────────────────────────────────────
 
-    @on(Button.Pressed, "#trade-back-button")
-    def show_trade_list(self) -> None:
-        """Triggered when the 'Back' button is clicked."""
-        switcher = self.query_one("#trades_switcher", ContentSwitcher)
-        switcher.current = "trades_list"
-        self.query_one("#trades_list", TradesList).focus()
+    def _on_action(self, action: str | None) -> None:
+        if action == "edit":
+            self.app.push_screen(
+                TradeEdit(self._selected.position_id, self._selected),
+                self._on_saved,
+            )
+        elif action == "delete":
+            trade = self._selected
+            self.app.push_screen(
+                ConfirmScreen(
+                    f"Delete trade on {trade.date.strftime('%Y-%m-%d')} "
+                    f"({trade.type.value.upper()} {trade.quantity} @ {trade.price:,.4f})?"
+                ),
+                lambda confirmed: self._delete(trade.id) if confirmed else None,
+            )
+
+    @work(thread=True)
+    def _delete(self, trade_id: int) -> None:
+        try:
+            api_service.delete_trade(trade_id)
+        except Exception as exc:
+            log.error(f"Failed to delete trade {trade_id}: {exc}")
+        self.app.call_from_thread(self._fetch_data)
+
+    def _on_saved(self, result: TradeRead | None) -> None:
+        if result is not None:
+            self._fetch_data()
