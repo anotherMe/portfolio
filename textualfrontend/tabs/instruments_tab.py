@@ -1,84 +1,90 @@
 from textual.app import ComposeResult
-from textual import on
-from textual.widgets import DataTable, ContentSwitcher, Button, Static
-from textual.containers import Vertical, Horizontal
+from textual import on, work
+from textual.widgets import DataTable
+from textual.containers import Vertical
 
+from schemas.instrument import InstrumentRead
 from api_service import get_instruments
+import api_service
+from edit.instrument_edit import InstrumentActionsModal, InstrumentEditModal
+from widgets.confirm_screen import ConfirmScreen
 
+import logging
+log = logging.getLogger(__name__)
 
-class InstrumentEdit(Vertical):
-    """A custom widget representing the edit view."""
-    def compose(self) -> ComposeResult:
-        # Placeholder for our details
-        yield Static("No Instrument selected", id="edit-content")
-        # A button to go back to the datatable
-        yield Button("← Back to List", id="back-button", variant="primary")
-
-class InstrumentDetails(Horizontal):
-    """A custom widget representing the details view."""
-    def compose(self) -> ComposeResult:
-        # Placeholder for our details
-        yield Static("Instrument Details Here", id="instrument-details-content")
-
-class InstrumentList(Vertical):
-    """Instruments list (DataTable) on top half and the details view on the bottom half"""
-    
-    def compose(self) -> ComposeResult:
-        table = DataTable(id="instruments_table", cursor_type="row")
-        table.styles.height = "2fr"
-        yield table
-        
-        details = InstrumentDetails(id="instrument_details")
-        details.styles.height = "1fr"
-        yield details
-
-    def on_mount(self) -> None:
-        """Fetch and populate data when the tab is mounted."""
-        table = self.query_one("#instruments_table", DataTable)
-        instruments = get_instruments()
-
-        if instruments:
-            columns_to_show = {"name", "ticker", "category", "currency"}
-            table.add_columns(*instruments[0].model_dump(include=columns_to_show).keys())
-            for instrument in instruments:
-                table.add_row(*instrument.model_dump(include=columns_to_show).values(), key=str(instrument.id))          
 
 class InstrumentsTab(Vertical):
     """The Instruments tab content."""
 
     def compose(self) -> ComposeResult:
-        with ContentSwitcher(id="instruments_switcher", initial="instruments_list"):
-            yield InstrumentList(id="instruments_list")
-            yield InstrumentEdit(id="instrument_edit")
+        yield DataTable(id="instruments_table", cursor_type="row")
+
+    def on_mount(self) -> None:
+        table = self.query_one("#instruments_table", DataTable)
+        table.add_columns("Name", "Ticker", "ISIN", "Currency", "Category")
+        self._instruments: dict[str, InstrumentRead] = {}
+        self._selected: InstrumentRead | None = None
+        self._fetch_data()
+
+    # ── Data ──────────────────────────────────────────────────────────
+
+    @work(thread=True)
+    def _fetch_data(self) -> None:
+        try:
+            instruments = get_instruments()
+        except Exception as exc:
+            log.error(f"Failed to load instruments: {exc}")
+            instruments = []
+        self.app.call_from_thread(self._populate, instruments)
+
+    def _populate(self, instruments: list[InstrumentRead]) -> None:
+        self._instruments = {str(i.id): i for i in instruments}
+        self._selected = None
+        table = self.query_one("#instruments_table", DataTable)
+        table.clear()
+        for i in instruments:
+            table.add_row(
+                i.name,
+                i.ticker or "",
+                i.isin or "",
+                i.currency,
+                i.category or "",
+                key=str(i.id),
+            )
+
+    # ── Row selection ──────────────────────────────────────────────────
 
     @on(DataTable.RowSelected, "#instruments_table")
-    def on_instruments_table_row_selected(self, event: DataTable.RowSelected) -> None:
-        """Handle a row being selected (e.g., by pressing Enter)."""
-        table = event.data_table
-        row_key = event.row_key
-        instrument_id = row_key.value
-        row_data = table.get_row(row_key)
-        
-        edit_label = self.query_one("#edit-content", Static)
-        edit_label.update(f"Editing / Viewing details for:\n\n**ID:** {instrument_id}\n**Data:** {row_data}")
-        
-        switcher = self.query_one("#instruments_switcher", ContentSwitcher)
-        switcher.current = "instrument_edit"
+    def on_row_selected(self, event: DataTable.RowSelected) -> None:
+        instrument = self._instruments.get(str(event.row_key.value)) if event.row_key else None
+        if instrument is None:
+            return
+        self._selected = instrument
+        self.app.push_screen(InstrumentActionsModal(instrument), self._on_action)
 
-    @on(DataTable.RowHighlighted, "#instruments_table")
-    def on_data_table_row_highlighted(self, event: DataTable.RowHighlighted ) -> None:
-        """Handle a row being highlighted (e.g., by pressing arrow keys)."""
-        table = event.data_table
-        row_key = event.row_key
-        instrument_id = row_key.value
-        row_data = table.get_row(row_key)
-        
-        details_label = self.query_one("#instrument-details-content", Static)
-        details_label.update(f"Editing / Viewing details for:\n\n**ID:** {instrument_id}\n**Data:** {row_data}")
+    # ── Action callbacks ───────────────────────────────────────────────
 
-    @on(Button.Pressed, "#back-button")
-    def show_instrument_list(self) -> None:
-        """Triggered when the 'Back' button is clicked."""
-        switcher = self.query_one("#instruments_switcher", ContentSwitcher)
-        switcher.current = "instruments_list"
-        self.query_one("#instruments_list", InstrumentList).focus()
+    def _on_action(self, action: str | None) -> None:
+        if action == "edit":
+            self.app.push_screen(
+                InstrumentEditModal(self._selected),
+                self._on_saved,
+            )
+        elif action == "delete":
+            instrument = self._selected
+            self.app.push_screen(
+                ConfirmScreen(f"Delete instrument {instrument.name}?"),
+                lambda confirmed: self._delete(instrument.id) if confirmed else None,
+            )
+
+    @work(thread=True)
+    def _delete(self, instrument_id: int) -> None:
+        try:
+            api_service.delete_instrument(instrument_id)
+        except Exception as exc:
+            log.error(f"Failed to delete instrument {instrument_id}: {exc}")
+        self.app.call_from_thread(self._fetch_data)
+
+    def _on_saved(self, result: InstrumentRead | None) -> None:
+        if result is not None:
+            self._fetch_data()

@@ -1,8 +1,9 @@
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
-from db.models import Instrument    
-from typing import List
+from db.models import Instrument
+from typing import List, Optional
+from schemas.instrument import InstrumentUpdate
 
 import logging
 
@@ -39,3 +40,22 @@ def get_instrument_by_isin(db: Session, isin: str) -> Instrument:
     stmt = select(Instrument).where(Instrument.isin == isin)
     result = db.execute(stmt)
     return result.scalar_one_or_none()
+
+
+def update_instrument(session: Session, instrument_id: int, data: InstrumentUpdate) -> Optional[Instrument]:
+    instrument = session.get(Instrument, instrument_id)
+    if not instrument:
+        return None
+    for field, value in data.model_dump(exclude_none=True).items():
+        setattr(instrument, field, value)
+    session.flush()
+    return instrument
+
+
+def delete_instrument(session: Session, instrument_id: int) -> bool:
+    instrument = session.get(Instrument, instrument_id)
+    if instrument:
+        session.delete(instrument)
+        session.flush()
+        return True
+    return False

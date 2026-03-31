@@ -18,6 +18,16 @@ class InstrumentCreate(InstrumentBase):
     pass
 
 
+class InstrumentUpdate(BaseModel):
+    isin: Optional[str] = None
+    ticker: Optional[str] = None
+    name: Optional[str] = None
+    name_long: Optional[str] = None
+    category: Optional[str] = None
+    description: Optional[str] = None
+    currency: Optional[str] = None
+
+
 class InstrumentRead(InstrumentBase):
     id: int
 

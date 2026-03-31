@@ -11,6 +11,11 @@ class AccountCreate(AccountBase):
     pass
 
 
+class AccountUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+
+
 class AccountRead(AccountBase):
     id: int
 

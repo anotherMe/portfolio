@@ -1,0 +1,151 @@
+from textual import on, work
+from textual.app import ComposeResult
+from textual.screen import ModalScreen
+from textual.widgets import Button, Input, Label, Static
+from textual.containers import Horizontal, Vertical
+
+from schemas.instrument import InstrumentRead, InstrumentUpdate
+import api_service
+
+import logging
+log = logging.getLogger(__name__)
+
+
+class InstrumentActionsModal(ModalScreen):
+    """Modal shown when an instrument row is selected."""
+
+    BINDINGS = [("escape", "dismiss", "Cancel")]
+
+    DEFAULT_CSS = """
+    InstrumentActionsModal {
+        align: center middle;
+    }
+    InstrumentActionsModal > Vertical {
+        width: 60;
+        height: auto;
+        padding: 1 2;
+        background: $surface;
+        border: solid $primary;
+    }
+    InstrumentActionsModal #modal-info {
+        padding-bottom: 1;
+    }
+    InstrumentActionsModal #modal-buttons {
+        height: auto;
+        margin-top: 1;
+        align-horizontal: right;
+    }
+    InstrumentActionsModal #modal-buttons Button {
+        margin-left: 1;
+    }
+    """
+
+    def __init__(self, instrument: InstrumentRead, **kwargs):
+        super().__init__(**kwargs)
+        self._instrument = instrument
+
+    def compose(self) -> ComposeResult:
+        i = self._instrument
+        with Vertical():
+            yield Static(
+                f"[bold]{i.name}[/bold]"
+                + (f"  [{i.ticker}]" if i.ticker else "")
+                + (f"  {i.isin}" if i.isin else "")
+                + (f"  {i.currency}" if i.currency else ""),
+                id="modal-info",
+            )
+            with Horizontal(id="modal-buttons"):
+                yield Button("Cancel", id="modal-cancel-btn")
+                yield Button("Edit", id="modal-edit-btn", variant="warning")
+                yield Button("Delete", id="modal-delete-btn", variant="error")
+
+    @on(Button.Pressed, "#modal-cancel-btn")
+    def on_cancel(self) -> None:
+        self.dismiss(None)
+
+    @on(Button.Pressed, "#modal-edit-btn")
+    def on_edit(self) -> None:
+        self.dismiss("edit")
+
+    @on(Button.Pressed, "#modal-delete-btn")
+    def on_delete(self) -> None:
+        self.dismiss("delete")
+
+
+class InstrumentEditModal(ModalScreen):
+    """Modal form for editing an Instrument."""
+
+    DEFAULT_CSS = """
+    InstrumentEditModal {
+        align: center middle;
+    }
+    InstrumentEditModal > Vertical {
+        width: 70;
+        height: auto;
+        background: $surface;
+        border: thick $primary;
+        padding: 1 2;
+    }
+    InstrumentEditModal Label {
+        margin-top: 1;
+    }
+    InstrumentEditModal #form-buttons {
+        height: auto;
+        margin-top: 1;
+        align-horizontal: right;
+    }
+    InstrumentEditModal #form-buttons Button {
+        margin-left: 1;
+    }
+    """
+
+    BINDINGS = [("escape", "cancel", "Cancel")]
+
+    def __init__(self, instrument: InstrumentRead, **kwargs):
+        super().__init__(**kwargs)
+        self._instrument = instrument
+
+    def compose(self) -> ComposeResult:
+        i = self._instrument
+        with Vertical():
+            yield Static(f"Edit Instrument: [bold]{i.name}[/bold]")
+            yield Label("Name *")
+            yield Input(value=i.name or "", id="field-name")
+            yield Label("Ticker")
+            yield Input(value=i.ticker or "", id="field-ticker")
+            yield Label("ISIN")
+            yield Input(value=i.isin or "", id="field-isin")
+            yield Label("Currency *")
+            yield Input(value=i.currency or "", id="field-currency")
+            yield Label("Category")
+            yield Input(value=i.category or "", id="field-category")
+            yield Label("Description")
+            yield Input(value=i.description or "", id="field-description")
+            with Horizontal(id="form-buttons"):
+                yield Button("Cancel", id="btn-cancel")
+                yield Button("Save", id="btn-save", variant="success")
+
+    @on(Button.Pressed, "#btn-cancel")
+    def action_cancel(self) -> None:
+        self.dismiss(None)
+
+    @on(Button.Pressed, "#btn-save")
+    def on_save(self) -> None:
+        self._do_save()
+
+    @work(thread=True)
+    def _do_save(self) -> None:
+        data = InstrumentUpdate(
+            name=self.query_one("#field-name", Input).value or None,
+            ticker=self.query_one("#field-ticker", Input).value or None,
+            isin=self.query_one("#field-isin", Input).value or None,
+            currency=self.query_one("#field-currency", Input).value or None,
+            category=self.query_one("#field-category", Input).value or None,
+            description=self.query_one("#field-description", Input).value or None,
+        )
+        try:
+            result = api_service.update_instrument(self._instrument.id, data)
+            self.app.call_from_thread(self.dismiss, result)
+        except Exception as exc:
+            log.error(f"Failed to update instrument {self._instrument.id}: {exc}")
+            self.app.call_from_thread(self.dismiss, None)

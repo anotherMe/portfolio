@@ -1,76 +1,88 @@
 from textual.app import ComposeResult
-from textual import on
-from textual.widgets import DataTable, ContentSwitcher, Button, Static
-from textual.containers import Vertical, Horizontal
+from textual import on, work
+from textual.widgets import DataTable
+from textual.containers import Vertical
+
+from schemas.account import AccountRead
 from api_service import get_accounts
+import api_service
+from edit.account_edit import AccountActionsModal, AccountEditModal
+from widgets.confirm_screen import ConfirmScreen
 
-class AccountEdit(Vertical):
-    """A custom widget representing the edit view."""
-    def compose(self) -> ComposeResult:
-        yield Static("No Account selected", id="account-edit-content")
-        yield Button("← Back to List", id="account-back-button", variant="primary")
+import logging
+log = logging.getLogger(__name__)
 
-class AccountDetails(Horizontal):
-    """A custom widget representing the details view."""
-    def compose(self) -> ComposeResult:
-        yield Static("Account Details Here", id="account-details-content")
-
-class AccountsList(Vertical):
-    """Accounts list (DataTable) on top half and the details view on the bottom half"""
-    
-    def compose(self) -> ComposeResult:
-        table = DataTable(id="accounts_table", cursor_type="row")
-        table.styles.height = "2fr"
-        yield table
-
-        details = AccountDetails(id="account_details")
-        details.styles.height = "1fr"
-        yield details
-
-    def on_mount(self) -> None:
-        """Fetch and populate data when the tab is mounted."""
-        table = self.query_one("#accounts_table", DataTable)
-        accounts = get_accounts()
-
-        if accounts:
-            columns_to_show = ["id", "name", "description"]
-            table.add_columns(*columns_to_show)
-            for acc in accounts:
-                table.add_row(*acc.model_dump(include=set(columns_to_show)).values(), key=str(acc.id))
 
 class AccountsTab(Vertical):
     """The Accounts tab content."""
 
     def compose(self) -> ComposeResult:
-        with ContentSwitcher(id="accounts_switcher", initial="accounts_list"):
-            yield AccountsList(id="accounts_list")
-            yield AccountEdit(id="account_edit")
+        yield DataTable(id="accounts_table", cursor_type="row")
+
+    def on_mount(self) -> None:
+        table = self.query_one("#accounts_table", DataTable)
+        table.add_columns("ID", "Name", "Description")
+        self._accounts: dict[str, AccountRead] = {}
+        self._selected: AccountRead | None = None
+        self._fetch_data()
+
+    # ── Data ──────────────────────────────────────────────────────────
+
+    @work(thread=True)
+    def _fetch_data(self) -> None:
+        try:
+            accounts = get_accounts()
+        except Exception as exc:
+            log.error(f"Failed to load accounts: {exc}")
+            accounts = []
+        self.app.call_from_thread(self._populate, accounts)
+
+    def _populate(self, accounts: list[AccountRead]) -> None:
+        self._accounts = {str(a.id): a for a in accounts}
+        self._selected = None
+        table = self.query_one("#accounts_table", DataTable)
+        table.clear()
+        for a in accounts:
+            table.add_row(
+                str(a.id),
+                a.name,
+                a.description or "",
+                key=str(a.id),
+            )
+
+    # ── Row selection ──────────────────────────────────────────────────
 
     @on(DataTable.RowSelected, "#accounts_table")
-    def on_accounts_table_row_selected(self, event: DataTable.RowSelected) -> None:
-        table = event.data_table
-        row_key = event.row_key
-        acc_id = row_key.value
-        row_data = table.get_row(row_key)
-        
-        edit_label = self.query_one("#account-edit-content", Static)
-        edit_label.update(f"Editing / Viewing details for:\n\n**ID:** {acc_id}\n**Data:** {row_data}")
-        
-        switcher = self.query_one("#accounts_switcher", ContentSwitcher)
-        switcher.current = "account_edit"
+    def on_row_selected(self, event: DataTable.RowSelected) -> None:
+        account = self._accounts.get(str(event.row_key.value)) if event.row_key else None
+        if account is None:
+            return
+        self._selected = account
+        self.app.push_screen(AccountActionsModal(account), self._on_action)
 
-    @on(DataTable.RowHighlighted, "#accounts_table")
-    def on_data_table_row_highlighted(self, event: DataTable.RowHighlighted ) -> None:
-        table = event.data_table
-        row_key = event.row_key
-        acc_id = row_key.value
-        row_data = table.get_row(row_key)
-        
-        details_label = self.query_one("#account-details-content", Static)
-        details_label.update(f"Editing / Viewing details for:\n\n**ID:** {acc_id}\n**Data:** {row_data}")
+    # ── Action callbacks ───────────────────────────────────────────────
 
-    @on(Button.Pressed, "#account-back-button")
-    def show_account_list(self) -> None:
-        switcher = self.query_one("#accounts_switcher", ContentSwitcher)
-        switcher.current = "accounts_list"
-        self.query_one("#accounts_list", AccountsList).focus()
+    def _on_action(self, action: str | None) -> None:
+        if action == "edit":
+            self.app.push_screen(
+                AccountEditModal(self._selected),
+                self._on_saved,
+            )
+        elif action == "delete":
+            account = self._selected
+            self.app.push_screen(
+                ConfirmScreen(f"Delete account {account.name}?"),
+                lambda confirmed: self._delete(account.id) if confirmed else None,
+            )
+
+    @work(thread=True)
+    def _delete(self, account_id: int) -> None:
+        try:
+            api_service.delete_account(account_id)
+        except Exception as exc:
+            log.error(f"Failed to delete account {account_id}: {exc}")
+        self.app.call_from_thread(self._fetch_data)
+
+    def _on_saved(self, result: AccountRead | None) -> None:
+        if result is not None:
+            self._fetch_data()

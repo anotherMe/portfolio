@@ -1,9 +1,9 @@
 
-from typing import List
+from typing import List, Optional
 from sqlalchemy.orm import Session
 from repositories import instruments_repository
 from repositories import ohlcvs_repository
-from schemas.instrument import InstrumentRead, InstrumentWithLastPrice
+from schemas.instrument import InstrumentRead, InstrumentUpdate, InstrumentWithLastPrice
 
 import logging
 
@@ -34,6 +34,16 @@ def get_instruments(session: Session) -> List[InstrumentRead]:
     
     return dtos
 
+
+def update_instrument(session: Session, instrument_id: int, data: InstrumentUpdate) -> Optional[InstrumentRead]:
+    instrument = instruments_repository.update_instrument(session, instrument_id, data)
+    if not instrument:
+        return None
+    return InstrumentRead.model_validate(instrument)
+
+
+def delete_instrument(session: Session, instrument_id: int) -> bool:
+    return instruments_repository.delete_instrument(session, instrument_id)
 
 def get_instruments_with_last_price(session: Session) -> List[InstrumentWithLastPrice]:
     """
