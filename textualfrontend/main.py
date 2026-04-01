@@ -9,7 +9,7 @@ from textual.containers import Vertical
 from textual.binding import Binding
 from textual.logging import TextualHandler
 
-from api_service import get_accounts
+from api_service import get_accounts, backup_database
 
 # Import custom widgets
 from tabs.instruments_tab import InstrumentsTab
@@ -51,6 +51,7 @@ class MyPortfolio(App):
     def get_system_commands(self, screen: Screen) -> Iterable[SystemCommand]:
         yield from super().get_system_commands(screen)
         yield SystemCommand("Toggle dark mode", "Toggle dark mode", self._toggle_dark)
+        yield SystemCommand("Backup database", "Create a timestamped backup of the database", self._backup_database)
 
     def compose(self) -> ComposeResult:
         """Create child widgets for the app."""
@@ -88,6 +89,14 @@ class MyPortfolio(App):
         self.query_one("#status-bar", StatusBar).update(
             f"  📂  Account: [bold italic]{name}[/bold italic]"
         )
+
+    def _backup_database(self) -> None:
+        """Trigger a database backup via the API."""
+        try:
+            path = backup_database()
+            self.notify(f"Backup created: {path}", title="Backup", severity="information")
+        except Exception as exc:
+            self.notify(str(exc), title="Backup failed", severity="error")
 
     def _toggle_dark(self) -> None:
         """An action to toggle dark mode."""

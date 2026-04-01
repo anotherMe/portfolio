@@ -139,3 +139,10 @@ def update_account(account_id: int, data: AccountUpdate) -> AccountRead:
 def delete_account(account_id: int) -> None:
     response = requests.delete(f"{API_URL}/accounts/{account_id}")
     response.raise_for_status()
+
+
+def backup_database() -> str:
+    """Trigger a database backup and return the backup file path."""
+    response = requests.post(f"{API_URL}/backup/")
+    response.raise_for_status()
+    return response.json()["backup"]
