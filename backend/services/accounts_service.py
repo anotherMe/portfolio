@@ -1,7 +1,12 @@
 from typing import Optional
 from sqlalchemy.orm import Session
-from schemas.account import AccountRead, AccountUpdate
+from schemas.account import AccountCreate, AccountRead, AccountUpdate
 from repositories import accounts_repository
+
+
+def create_account(session: Session, data: AccountCreate) -> AccountRead:
+    account = accounts_repository.create_account(session, data)
+    return AccountRead.model_validate(account)
 
 
 def get_accounts(session: Session) -> list[AccountRead]:

@@ -1,7 +1,7 @@
 from textual.app import ComposeResult
 from textual import on, work
-from textual.widgets import DataTable
-from textual.containers import Vertical
+from textual.widgets import Button, DataTable
+from textual.containers import Horizontal, Vertical
 
 from schemas.transaction import TransactionRead
 from api_service import get_transactions
@@ -17,8 +17,18 @@ log = logging.getLogger(__name__)
 class TransactionsTab(Vertical):
     """The Transactions tab content."""
 
+    DEFAULT_CSS = """
+    TransactionsTab #transactions-toolbar {
+        height: auto;
+        align-horizontal: right;
+        margin-top: 1;
+    }
+    """
+
     def compose(self) -> ComposeResult:
         yield DataTable(id="transactions_table", cursor_type="row")
+        with Horizontal(id="transactions-toolbar"):
+            yield Button("+ Add Transaction", id="btn-add-transaction", variant="success")
 
     def on_mount(self) -> None:
         table = self.query_one("#transactions_table", DataTable)
@@ -87,6 +97,10 @@ class TransactionsTab(Vertical):
         except Exception as exc:
             log.error(f"Failed to delete transaction {transaction_id}: {exc}")
         self.app.call_from_thread(self._fetch_data)
+
+    @on(Button.Pressed, "#btn-add-transaction")
+    def on_add_transaction(self) -> None:
+        self.app.push_screen(TransactionEdit(), self._on_saved)
 
     def _on_saved(self, result: TransactionRead | None) -> None:
         if result is not None:

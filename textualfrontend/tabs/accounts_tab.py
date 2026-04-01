@@ -1,12 +1,12 @@
 from textual.app import ComposeResult
 from textual import on, work
-from textual.widgets import DataTable
-from textual.containers import Vertical
+from textual.widgets import Button, DataTable
+from textual.containers import Horizontal, Vertical
 
 from schemas.account import AccountRead
 from api_service import get_accounts
 import api_service
-from edit.account_edit import AccountActionsModal, AccountEditModal
+from edit.account_edit import AccountActionsModal, AccountCreateModal, AccountEditModal
 from widgets.confirm_screen import ConfirmScreen
 
 import logging
@@ -16,8 +16,18 @@ log = logging.getLogger(__name__)
 class AccountsTab(Vertical):
     """The Accounts tab content."""
 
+    DEFAULT_CSS = """
+    AccountsTab #accounts-toolbar {
+        height: auto;
+        align-horizontal: right;
+        margin-top: 1;
+    }
+    """
+
     def compose(self) -> ComposeResult:
         yield DataTable(id="accounts_table", cursor_type="row")
+        with Horizontal(id="accounts-toolbar"):
+            yield Button("+ Add Account", id="btn-add-account", variant="success")
 
     def on_mount(self) -> None:
         table = self.query_one("#accounts_table", DataTable)
@@ -82,6 +92,10 @@ class AccountsTab(Vertical):
         except Exception as exc:
             log.error(f"Failed to delete account {account_id}: {exc}")
         self.app.call_from_thread(self._fetch_data)
+
+    @on(Button.Pressed, "#btn-add-account")
+    def on_add_account(self) -> None:
+        self.app.push_screen(AccountCreateModal(), self._on_saved)
 
     def _on_saved(self, result: AccountRead | None) -> None:
         if result is not None:

@@ -3,11 +3,16 @@ from typing import List, Optional
 from sqlalchemy.orm import Session
 from repositories import instruments_repository
 from repositories import ohlcvs_repository
-from schemas.instrument import InstrumentRead, InstrumentUpdate, InstrumentWithLastPrice
+from schemas.instrument import InstrumentCreate, InstrumentRead, InstrumentUpdate, InstrumentWithLastPrice
 
 import logging
 
 log = logging.getLogger(__name__)
+
+
+def create_instrument(session: Session, data: InstrumentCreate) -> InstrumentRead:
+    instrument = instruments_repository.create_instrument(session, data)
+    return InstrumentRead.model_validate(instrument)
 
 
 def get_instruments(session: Session) -> List[InstrumentRead]:

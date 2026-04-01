@@ -3,8 +3,8 @@ import requests
 from schemas import portfolio, instrument, trade, transaction, account
 from schemas.trade import TradeCreate, TradeUpdate, TradeRead
 from schemas.transaction import TransactionCreate, TransactionUpdate, TransactionRead
-from schemas.instrument import InstrumentRead, InstrumentUpdate
-from schemas.account import AccountRead, AccountUpdate
+from schemas.instrument import InstrumentRead, InstrumentCreate, InstrumentUpdate
+from schemas.account import AccountRead, AccountCreate, AccountUpdate
 
 
 API_URL = "http://localhost:8000"
@@ -105,6 +105,12 @@ def delete_transaction(transaction_id: int) -> None:
     response.raise_for_status()
 
 
+def create_instrument(data: InstrumentCreate) -> InstrumentRead:
+    response = requests.post(f"{API_URL}/instruments/", json=data.model_dump(mode="json"))
+    response.raise_for_status()
+    return InstrumentRead(**response.json())
+
+
 def update_instrument(instrument_id: int, data: InstrumentUpdate) -> InstrumentRead:
     payload = {k: v for k, v in data.model_dump(mode="json").items() if v is not None}
     response = requests.put(f"{API_URL}/instruments/{instrument_id}", json=payload)
@@ -115,6 +121,12 @@ def update_instrument(instrument_id: int, data: InstrumentUpdate) -> InstrumentR
 def delete_instrument(instrument_id: int) -> None:
     response = requests.delete(f"{API_URL}/instruments/{instrument_id}")
     response.raise_for_status()
+
+
+def create_account(data: AccountCreate) -> AccountRead:
+    response = requests.post(f"{API_URL}/accounts/", json=data.model_dump(mode="json"))
+    response.raise_for_status()
+    return AccountRead(**response.json())
 
 
 def update_account(account_id: int, data: AccountUpdate) -> AccountRead:

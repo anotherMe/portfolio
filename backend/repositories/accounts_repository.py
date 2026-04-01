@@ -1,7 +1,14 @@
 from typing import Optional
 from sqlalchemy.orm import Session
 from db.models import Account
-from schemas.account import AccountUpdate
+from schemas.account import AccountCreate, AccountUpdate
+
+
+def create_account(session: Session, data: AccountCreate) -> Account:
+    account = Account(**data.model_dump())
+    session.add(account)
+    session.flush()
+    return account
 
 
 def get_all_accounts(session: Session):

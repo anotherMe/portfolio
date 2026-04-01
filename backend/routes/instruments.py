@@ -5,9 +5,14 @@ from typing import List
 
 from db.deps import get_db
 from services import instruments_service
-from schemas.instrument import InstrumentRead, InstrumentUpdate, InstrumentWithLastPrice
+from schemas.instrument import InstrumentCreate, InstrumentRead, InstrumentUpdate, InstrumentWithLastPrice
 
 router = APIRouter()
+
+@router.post("/", response_model=InstrumentRead, status_code=201)
+def create_instrument(data: InstrumentCreate, session: Session = Depends(get_db)):
+    return instruments_service.create_instrument(session, data)
+
 
 @router.get("/", response_model=List[InstrumentRead])
 def get_instruments(session: Session = Depends(get_db)):

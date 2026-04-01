@@ -4,7 +4,7 @@ from textual.screen import ModalScreen
 from textual.widgets import Button, Input, Label, Static
 from textual.containers import Horizontal, Vertical
 
-from schemas.account import AccountRead, AccountUpdate
+from schemas.account import AccountCreate, AccountRead, AccountUpdate
 import api_service
 
 import logging
@@ -134,4 +134,44 @@ class AccountEditModal(ModalScreen):
             self.app.call_from_thread(self.dismiss, result)
         except Exception as exc:
             log.error(f"Failed to update account {self._account.id}: {exc}")
+            self.app.call_from_thread(self.dismiss, None)
+
+
+class AccountCreateModal(ModalScreen):
+    """Modal form for creating a new Account."""
+
+    DEFAULT_CSS = AccountEditModal.DEFAULT_CSS.replace("AccountEditModal", "AccountCreateModal")
+
+    BINDINGS = [("escape", "cancel", "Cancel")]
+
+    def compose(self) -> ComposeResult:
+        with Vertical():
+            yield Static("Add Account")
+            yield Label("Name *")
+            yield Input(placeholder="Account name", id="field-name")
+            yield Label("Description")
+            yield Input(placeholder="Optional description", id="field-description")
+            with Horizontal(id="form-buttons"):
+                yield Button("Cancel", id="btn-cancel")
+                yield Button("Save", id="btn-save", variant="success")
+
+    @on(Button.Pressed, "#btn-cancel")
+    def action_cancel(self) -> None:
+        self.dismiss(None)
+
+    @on(Button.Pressed, "#btn-save")
+    def on_save(self) -> None:
+        self._do_save()
+
+    @work(thread=True)
+    def _do_save(self) -> None:
+        data = AccountCreate(
+            name=self.query_one("#field-name", Input).value or "",
+            description=self.query_one("#field-description", Input).value or None,
+        )
+        try:
+            result = api_service.create_account(data)
+            self.app.call_from_thread(self.dismiss, result)
+        except Exception as exc:
+            log.error(f"Failed to create account: {exc}")
             self.app.call_from_thread(self.dismiss, None)

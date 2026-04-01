@@ -4,7 +4,7 @@ from textual.screen import ModalScreen
 from textual.widgets import Button, Input, Label, Select, Static
 from textual.containers import Horizontal, Vertical
 
-from schemas.instrument import InstrumentRead, InstrumentUpdate
+from schemas.instrument import InstrumentCreate, InstrumentRead, InstrumentUpdate
 from enums import Currency, InstrumentCategory
 import api_service
 
@@ -119,13 +119,11 @@ class InstrumentEditModal(ModalScreen):
             yield Label("Currency *")
             yield Select(
                 [(c.name, c.name) for c in Currency],
-                value=i.currency or Select.BLANK,
                 id="field-currency",
             )
             yield Label("Category")
             yield Select(
                 [(c.value, c.value) for c in InstrumentCategory],
-                value=i.category or Select.BLANK,
                 allow_blank=True,
                 prompt="—",
                 id="field-category",
@@ -135,6 +133,13 @@ class InstrumentEditModal(ModalScreen):
             with Horizontal(id="form-buttons"):
                 yield Button("Cancel", id="btn-cancel")
                 yield Button("Save", id="btn-save", variant="success")
+
+    def on_mount(self) -> None:
+        i = self._instrument
+        if i.currency:
+            self.query_one("#field-currency", Select).value = i.currency
+        if i.category:
+            self.query_one("#field-category", Select).value = i.category
 
     @on(Button.Pressed, "#btn-cancel")
     def action_cancel(self) -> None:
@@ -152,8 +157,8 @@ class InstrumentEditModal(ModalScreen):
             name=self.query_one("#field-name", Input).value or None,
             ticker=self.query_one("#field-ticker", Input).value or None,
             isin=self.query_one("#field-isin", Input).value or None,
-            currency=currency_val if currency_val is not Select.BLANK else None,
-            category=category_val if category_val is not Select.BLANK else None,
+            currency=currency_val if isinstance(currency_val, str) else None,
+            category=category_val if isinstance(category_val, str) else None,
             description=self.query_one("#field-description", Input).value or None,
         )
         try:
@@ -161,4 +166,87 @@ class InstrumentEditModal(ModalScreen):
             self.app.call_from_thread(self.dismiss, result)
         except Exception as exc:
             log.error(f"Failed to update instrument {self._instrument.id}: {exc}")
+            self.app.call_from_thread(self.dismiss, None)
+
+
+class InstrumentCreateModal(ModalScreen):
+    """Modal form for creating a new Instrument."""
+
+    DEFAULT_CSS = InstrumentEditModal.DEFAULT_CSS.replace("InstrumentEditModal", "InstrumentCreateModal") + """
+    InstrumentCreateModal #field-error {
+        color: $error;
+        height: auto;
+        margin-bottom: 1;
+        display: none;
+    }
+    """
+
+    BINDINGS = [("escape", "cancel", "Cancel")]
+
+    def compose(self) -> ComposeResult:
+        with Vertical():
+            yield Static("Add Instrument")
+            yield Label("Name *")
+            yield Input(placeholder="Instrument name", id="field-name")
+            yield Label("Ticker")
+            yield Input(placeholder="e.g. AAPL", id="field-ticker")
+            yield Label("ISIN")
+            yield Input(placeholder="e.g. US0378331005", id="field-isin")
+            yield Label("Currency *")
+            yield Select(
+                [(c.name, c.name) for c in Currency],
+                id="field-currency",
+            )
+            yield Label("Category")
+            yield Select(
+                [(c.value, c.value) for c in InstrumentCategory],
+                allow_blank=True,
+                prompt="—",
+                id="field-category",
+            )
+            yield Label("Description")
+            yield Input(placeholder="Optional description", id="field-description")
+            yield Static("", id="field-error")
+            with Horizontal(id="form-buttons"):
+                yield Button("Cancel", id="btn-cancel")
+                yield Button("Save", id="btn-save", variant="success")
+
+    @on(Button.Pressed, "#btn-cancel")
+    def action_cancel(self) -> None:
+        self.dismiss(None)
+
+    @on(Button.Pressed, "#btn-save")
+    def on_save(self) -> None:
+        error = self._validate()
+        if error:
+            err = self.query_one("#field-error", Static)
+            err.update(error)
+            err.display = True
+            return
+        self._do_save()
+
+    def _validate(self) -> str | None:
+        if not self.query_one("#field-name", Input).value.strip():
+            return "Name is required."
+        if not isinstance(self.query_one("#field-currency", Select).value, str):
+            return "Currency is required."
+        return None
+
+    @work(thread=True)
+    def _do_save(self) -> None:
+        currency_val = self.query_one("#field-currency", Select).value
+        category_val = self.query_one("#field-category", Select).value
+        data = InstrumentCreate(
+            name=self.query_one("#field-name", Input).value.strip(),
+            ticker=self.query_one("#field-ticker", Input).value or None,
+            isin=self.query_one("#field-isin", Input).value or None,
+            currency=currency_val if isinstance(currency_val, str) else "",
+            category=category_val if isinstance(category_val, str) else None,
+            description=self.query_one("#field-description", Input).value or None,
+        )
+        try:
+            result = api_service.create_instrument(data)
+            self.app.call_from_thread(self.dismiss, result)
+        except Exception as exc:
+            log.error(f"Failed to create instrument: {exc}")
             self.app.call_from_thread(self.dismiss, None)

@@ -3,11 +3,18 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 from db.models import Instrument
 from typing import List, Optional
-from schemas.instrument import InstrumentUpdate
+from schemas.instrument import InstrumentCreate, InstrumentUpdate
 
 import logging
 
 log = logging.getLogger(__name__)
+
+def create_instrument(session: Session, data: InstrumentCreate) -> Instrument:
+    instrument = Instrument(**data.model_dump())
+    session.add(instrument)
+    session.flush()
+    return instrument
+
 
 def get_instruments(db: Session) -> List[Instrument]:
     """

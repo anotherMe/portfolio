@@ -9,6 +9,7 @@ from textual.containers import Horizontal, Vertical
 from enums import TransactionType
 from schemas.transaction import TransactionCreate, TransactionRead, TransactionUpdate
 import api_service
+from api_service import get_accounts
 
 import logging
 log = logging.getLogger(__name__)
@@ -57,7 +58,7 @@ class TransactionEdit(ModalScreen):
     }
     """
 
-    def __init__(self, position_id: int, account_id: int, transaction: TransactionRead | None = None):
+    def __init__(self, position_id: int | None = None, account_id: int | None = None, transaction: TransactionRead | None = None):
         super().__init__()
         self._position_id = position_id
         self._account_id = account_id
@@ -67,6 +68,9 @@ class TransactionEdit(ModalScreen):
         title = "Edit Transaction" if self._transaction else "Add Transaction"
         with Vertical():
             yield Static(title, classes="txe-title")
+            if self._account_id is None and self._transaction is None:
+                yield Label("Account")
+                yield Select([], id="txe-account", prompt="Select an account…")
             yield Label("Date & Time (YYYY-MM-DD HH:MM)")
             yield Input(placeholder="YYYY-MM-DD HH:MM", id="txe-date")
             yield Label("Type")
@@ -91,6 +95,20 @@ class TransactionEdit(ModalScreen):
             self.query_one("#txe-description", Input).value = self._transaction.description or ""
         else:
             self.query_one("#txe-date", Input).value = datetime.now().strftime("%Y-%m-%d %H:%M")
+        if self._account_id is None and self._transaction is None:
+            self._load_accounts()
+
+    @work(thread=True)
+    def _load_accounts(self) -> None:
+        try:
+            accounts = get_accounts()
+            options = [(a.name, str(a.id)) for a in accounts]
+        except Exception as exc:
+            log.error(f"Failed to load accounts: {exc}")
+            options = []
+        self.app.call_from_thread(
+            lambda: self.query_one("#txe-account", Select).set_options(options)
+        )
 
     @on(Button.Pressed, "#txe-cancel-btn")
     def on_cancel(self) -> None:
@@ -126,6 +144,10 @@ class TransactionEdit(ModalScreen):
         if self.query_one("#txe-type", Select).value is Select.BLANK:
             return "Please select a transaction type."
 
+        if self._account_id is None and self._transaction is None:
+            if self.query_one("#txe-account", Select).value is Select.BLANK:
+                return "Please select an account."
+
         return None
 
     @work(thread=True)
@@ -136,6 +158,10 @@ class TransactionEdit(ModalScreen):
         desc = self.query_one("#txe-description", Input).value.strip() or None
 
         tx_date = datetime.strptime(date_str, "%Y-%m-%d %H:%M").replace(tzinfo=timezone.utc)
+
+        account_id = self._account_id
+        if account_id is None and self._transaction is None:
+            account_id = int(self.query_one("#txe-account", Select).value)
 
         try:
             if self._transaction:
@@ -148,7 +174,7 @@ class TransactionEdit(ModalScreen):
                 result = api_service.update_transaction(self._transaction.id, data)
             else:
                 data = TransactionCreate(
-                    account_id=self._account_id,
+                    account_id=account_id,
                     position_id=self._position_id,
                     date=tx_date,
                     type=TransactionType(type_val),

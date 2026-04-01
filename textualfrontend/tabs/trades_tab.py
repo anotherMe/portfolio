@@ -1,7 +1,7 @@
 from textual.app import ComposeResult
 from textual import on, work
-from textual.widgets import DataTable
-from textual.containers import Vertical
+from textual.widgets import Button, DataTable
+from textual.containers import Horizontal, Vertical
 
 from schemas.trade import TradeRead
 from api_service import get_trades
@@ -17,8 +17,18 @@ log = logging.getLogger(__name__)
 class TradesTab(Vertical):
     """The Trades tab content."""
 
+    DEFAULT_CSS = """
+    TradesTab #trades-toolbar {
+        height: auto;
+        align-horizontal: right;
+        margin-top: 1;
+    }
+    """
+
     def compose(self) -> ComposeResult:
         yield DataTable(id="trades_table", cursor_type="row")
+        with Horizontal(id="trades-toolbar"):
+            yield Button("+ Add Trade", id="btn-add-trade", variant="success")
 
     def on_mount(self) -> None:
         table = self.query_one("#trades_table", DataTable)
@@ -88,6 +98,10 @@ class TradesTab(Vertical):
         except Exception as exc:
             log.error(f"Failed to delete trade {trade_id}: {exc}")
         self.app.call_from_thread(self._fetch_data)
+
+    @on(Button.Pressed, "#btn-add-trade")
+    def on_add_trade(self) -> None:
+        self.app.push_screen(TradeEdit(), self._on_saved)
 
     def _on_saved(self, result: TradeRead | None) -> None:
         if result is not None:
