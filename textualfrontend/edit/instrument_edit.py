@@ -1,10 +1,11 @@
 from textual import on, work
 from textual.app import ComposeResult
 from textual.screen import ModalScreen
-from textual.widgets import Button, Input, Label, Static
+from textual.widgets import Button, Input, Label, Select, Static
 from textual.containers import Horizontal, Vertical
 
 from schemas.instrument import InstrumentRead, InstrumentUpdate
+from enums import Currency, InstrumentCategory
 import api_service
 
 import logging
@@ -116,9 +117,19 @@ class InstrumentEditModal(ModalScreen):
             yield Label("ISIN")
             yield Input(value=i.isin or "", id="field-isin")
             yield Label("Currency *")
-            yield Input(value=i.currency or "", id="field-currency")
+            yield Select(
+                [(c.name, c.name) for c in Currency],
+                value=i.currency or Select.BLANK,
+                id="field-currency",
+            )
             yield Label("Category")
-            yield Input(value=i.category or "", id="field-category")
+            yield Select(
+                [(c.value, c.value) for c in InstrumentCategory],
+                value=i.category or Select.BLANK,
+                allow_blank=True,
+                prompt="—",
+                id="field-category",
+            )
             yield Label("Description")
             yield Input(value=i.description or "", id="field-description")
             with Horizontal(id="form-buttons"):
@@ -135,12 +146,14 @@ class InstrumentEditModal(ModalScreen):
 
     @work(thread=True)
     def _do_save(self) -> None:
+        currency_val = self.query_one("#field-currency", Select).value
+        category_val = self.query_one("#field-category", Select).value
         data = InstrumentUpdate(
             name=self.query_one("#field-name", Input).value or None,
             ticker=self.query_one("#field-ticker", Input).value or None,
             isin=self.query_one("#field-isin", Input).value or None,
-            currency=self.query_one("#field-currency", Input).value or None,
-            category=self.query_one("#field-category", Input).value or None,
+            currency=currency_val if currency_val is not Select.BLANK else None,
+            category=category_val if category_val is not Select.BLANK else None,
             description=self.query_one("#field-description", Input).value or None,
         )
         try:
