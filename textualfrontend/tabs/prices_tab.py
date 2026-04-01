@@ -64,9 +64,6 @@ class PricesTab(Vertical):
     def update_progress(self, progress: int) -> None:
         self.query_one("#progress_bar", ProgressBar).update(progress=progress)
 
-    def update_current_instrument(self, name: str) -> None:
-        self.query_one("#current_instrument", Static).update(f"Current: {name}")
-
     def update_status(self, msg: str) -> None:
         self.query_one("#status_message", Static).update(f"Status: {msg}")
 
@@ -142,7 +139,6 @@ class PricesTab(Vertical):
                 try:
                     result = load_prices_for_instrument(instrument.id)
                     self.app.call_from_thread(self.update_status, f"Loading {instrument.ticker}")
-                    self.app.call_from_thread(self.update_current_instrument, instrument.ticker)
                     self.app.call_from_thread(self.update_progress, self.current_index + 1)
                 except Exception as e:
                     log.error(f"Error loading prices for {instrument.ticker}: {str(e)}")
@@ -164,6 +160,5 @@ class PricesTab(Vertical):
         self.prices_loading = False
         self.query_one("#start_loading", Button).disabled = False
         self.query_one("#progress_bar", ProgressBar).update(total=len(self.instruments), progress=0)
-        self.update_current_instrument("None")
         self.get_instruments_with_prices()
         self.update_status(message.status_message)

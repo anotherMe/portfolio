@@ -6,7 +6,7 @@ from textual.binding import Binding
 from textual.screen import ModalScreen
 from api_service import get_positions
 from edit.position_edit import PositionEdit
-from rich.text import Text
+from widgets.formatting import format_currency, format_currency_color, format_percent_color, format_date
 
 import logging
 log = logging.getLogger(__name__)
@@ -126,10 +126,10 @@ class PositionsList(Vertical):
         table = self.query_one("#positions_table", DataTable)
 
         self.columns_to_show = [
-            "instrument_name", "instrument_isin", "instrument_ticker",
+            "instrument_name", "instrument_ticker",
             "opening_date", "total_invested", "latest_price",
-            "latest_price_date", "remaining_quantity", "pnl",
-            "pnl_percent", "position_closed", "closing_date",
+            "remaining_quantity", "pnl",
+            "pnl_percent", "closing_date"
         ]
         table.add_columns(*self.columns_to_show)
 
@@ -166,19 +166,15 @@ class PositionsList(Vertical):
             self._positions[str(position.position_id)] = position
 
             row_data = position.model_dump(include=set(self.columns_to_show))
+            
+            row_data["opening_date"] = format_date(row_data["opening_date"])
+            row_data["closing_date"] = format_date(row_data["closing_date"])
+            row_data["pnl_percent"] = format_percent_color(row_data["pnl_percent"])
+            row_data["total_invested"] = format_currency(row_data["total_invested"], position.instrument_currency)
+            row_data["latest_price"] = format_currency(row_data["latest_price"], position.instrument_currency)
+            row_data["pnl"] = format_currency_color(row_data["pnl"], position.instrument_currency)
 
-            # Format date fields
-            for date_field in ("opening_date", "closing_date", "latest_price_date"):
-                val = row_data.get(date_field)
-                row_data[date_field] = val.strftime("%Y-%m-%d %H:%M") if val else "—"
-
-            # Convert pnl to formatted Rich Text (green/red + percentage)
-            pnl_percent_value = row_data["pnl_percent"]
-            pnl_percent_str = f"{pnl_percent_value:.1%}"  # e.g. "17.0%" or "-3.2%"
-            pnl_color = "green" if pnl_percent_value >= 0 else "red"
-            row_data["pnl_percent"] = Text(pnl_percent_str, style=pnl_color)
-
-            table.add_row(*row_data.values(), key=str(position.position_id))
+            table.add_row(*[row_data[col] for col in self.columns_to_show], key=str(position.position_id))
 
 class PositionsTab(Vertical):
     """The Positions tab content."""

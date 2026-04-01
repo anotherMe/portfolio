@@ -11,6 +11,7 @@ class PositionSummary(BaseModel):
     instrument_name: str = ""
     instrument_isin: str = ""
     instrument_ticker: str = ""
+    instrument_currency: str = ""
 
     opening_date: Optional[datetime] = None
 

@@ -49,7 +49,8 @@ def _apply_fifo(session: Session, positions: List[Position]) -> List[PositionSum
             instrument_id=position.instrument_id if position.instrument else 0,
             instrument_name=position.instrument.name if position.instrument else "",
             instrument_isin=position.instrument.isin if position.instrument else "",
-            instrument_ticker=position.instrument.ticker if position.instrument else ""
+            instrument_ticker=position.instrument.ticker if position.instrument else "",
+            instrument_currency=position.instrument.currency if position.instrument else ""
         )
         
         # --- Get latest price --- 
