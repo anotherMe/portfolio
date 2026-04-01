@@ -181,8 +181,11 @@ class PositionsTab(Vertical):
 
     BINDINGS = [
         Binding("f", "filter", "Show Filters"),
+        Binding("o", "cycle_status", "Cycle Status"),
         Binding("escape", "back_to_list", "Back to List", show=False),
     ]
+
+    _STATUS_CYCLE = ["all", "open", "closed"]
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -247,6 +250,19 @@ class PositionsTab(Vertical):
         if switcher.current != "positions_list":
             switcher.current = "positions_list"
             self.query_one("#positions_list", PositionsList).focus()
+
+    def action_cycle_status(self) -> None:
+        """Cycle the position_status filter through all → open → closed."""
+        current = (self._current_filter.position_status if self._current_filter else "all")
+        next_status = self._STATUS_CYCLE[
+            (self._STATUS_CYCLE.index(current) + 1) % len(self._STATUS_CYCLE)
+        ]
+        if self._current_filter is None:
+            self._current_filter = Filter()
+        self._current_filter.position_status = next_status
+        self.query_one("#positions_list", PositionsList).refresh_table(
+            self._current_account_id, self._current_filter
+        )
 
     def action_filter(self) -> None:
         """Show the filter modal."""
