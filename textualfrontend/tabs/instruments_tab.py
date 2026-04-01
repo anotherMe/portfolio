@@ -21,6 +21,7 @@ class InstrumentsTab(Vertical):
         height: auto;
         align-horizontal: right;
         margin-top: 1;
+        margin-right: 1;
     }
     """
 

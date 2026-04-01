@@ -1,5 +1,6 @@
 from textual.app import ComposeResult
 from textual import on, work
+from textual.binding import Binding
 from textual.widgets import Button, DataTable
 from textual.containers import Horizontal, Vertical
 
@@ -15,6 +16,10 @@ log = logging.getLogger(__name__)
 
 class AccountsTab(Vertical):
     """The Accounts tab content."""
+
+    BINDINGS = [
+        Binding("d", "delete_account", "Delete current account"),
+    ]
 
     DEFAULT_CSS = """
     AccountsTab #accounts-toolbar {
@@ -35,6 +40,14 @@ class AccountsTab(Vertical):
         self._accounts: dict[str, AccountRead] = {}
         self._selected: AccountRead | None = None
         self._fetch_data()
+
+    def _action_delete_account(self) -> None:
+        # Get the actual highlighted row in the table
+        table = self.query_one("#accounts_table", DataTable)
+        row_key, _ = table.coordinate_to_cell_key(table.cursor_coordinate)
+        self._selected = self._accounts.get(str(row_key.value))
+        # Use the action handler to delete self._selected
+        self._on_action("delete")
 
     # ── Data ──────────────────────────────────────────────────────────
 

@@ -1,5 +1,6 @@
 from textual.app import ComposeResult
 from textual import on, work
+from textual.binding import Binding
 from textual.widgets import Button, DataTable
 from textual.containers import Horizontal, Vertical
 
@@ -17,11 +18,16 @@ log = logging.getLogger(__name__)
 class TransactionsTab(Vertical):
     """The Transactions tab content."""
 
+    BINDINGS = [
+        Binding("d", "delete_transaction", "Delete current transaction"),
+    ]
+
     DEFAULT_CSS = """
     TransactionsTab #transactions-toolbar {
         height: auto;
         align-horizontal: right;
         margin-top: 1;
+        margin-right: 1;
     }
     """
 
@@ -36,6 +42,14 @@ class TransactionsTab(Vertical):
         self._transactions: dict[str, TransactionRead] = {}
         self._selected: TransactionRead | None = None
         self._fetch_data()
+
+    def _action_delete_transaction(self) -> None:
+        # Get the actual highlighted row in the table
+        table = self.query_one("#transactions_table", DataTable)
+        row_key, _ = table.coordinate_to_cell_key(table.cursor_coordinate)
+        self._selected = self._transactions.get(str(row_key.value))
+        # Use the action handler to delete self._selected
+        self._on_action("delete")
 
     # ── Data ──────────────────────────────────────────────────────────
 

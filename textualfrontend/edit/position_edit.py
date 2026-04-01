@@ -260,7 +260,7 @@ class PositionEdit(Vertical):
 
         # Footer
         with Horizontal(id="pe-footer"):
-            yield Button("← Back to List", id="position-back-button", variant="primary")
+            yield Button("← Back to List", id="position-back-button", variant="primary")  # Note: This button is handled in positions_tab.py
 
     def on_mount(self) -> None:
         trades_table = self.query_one("#pe-trades-table", DataTable)
@@ -268,6 +268,9 @@ class PositionEdit(Vertical):
 
         transactions_table = self.query_one("#pe-transactions-table", DataTable)
         transactions_table.add_columns("Date", "Type", "Amount", "Description")
+
+    def on_show(self) -> None:
+        self.query_one("#pe-trades-table", DataTable).focus()
         
 
     # ──────────────────────────────────────────────────────────────────

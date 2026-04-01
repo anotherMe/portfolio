@@ -1,8 +1,10 @@
 import logging
+from typing import Iterable
 log = logging.getLogger(__name__)
 
-from textual.app import App, ComposeResult
+from textual.app import App, ComposeResult, SystemCommand
 from textual.widgets import Footer, Header, TabPane, TabbedContent, Static
+from textual.screen import Screen
 from textual.containers import Vertical
 from textual.binding import Binding
 from textual.logging import TextualHandler
@@ -39,12 +41,16 @@ class MyPortfolio(App):
     """
 
     BINDINGS = [
-        Binding("d", "toggle_dark", "Toggle dark mode"),
         Binding("a", "cycle_account", "Change Account"),
     ]
 
     _accounts: list = []
     _account_idx: int = 0
+
+    # Override command palette
+    def get_system_commands(self, screen: Screen) -> Iterable[SystemCommand]:
+        yield from super().get_system_commands(screen)
+        yield SystemCommand("Toggle dark mode", "Toggle dark mode", self._toggle_dark)
 
     def compose(self) -> ComposeResult:
         """Create child widgets for the app."""
@@ -83,7 +89,7 @@ class MyPortfolio(App):
             f"  📂  Account: [bold italic]{name}[/bold italic]"
         )
 
-    def action_toggle_dark(self) -> None:
+    def _toggle_dark(self) -> None:
         """An action to toggle dark mode."""
         self.theme = (
             "textual-dark" if self.theme == "textual-light" else "textual-light"
