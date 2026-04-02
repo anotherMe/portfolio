@@ -182,7 +182,6 @@ class PositionsTab(Vertical):
     BINDINGS = [
         Binding("f", "filter", "Show Filters"),
         Binding("o", "cycle_status", "Cycle Status"),
-        Binding("backspace", "back_to_list", "Back to List", show=True),
     ]
 
     _STATUS_CYCLE = ["all", "open", "closed"]
