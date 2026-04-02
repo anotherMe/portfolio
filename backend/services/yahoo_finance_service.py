@@ -82,12 +82,12 @@ def parse_file(session: Session, parser: YahooSymbolParser, create_instrument: b
             session.commit()
         except Exception as ex:
             session.rollback()
-            logging.exception()
+            logging.exception("Error while creating instrument")
             raise PortfolioException("YahooFinanceService", "Error while parsing file") from ex
-            
+
     try:
         load_ohlcv_from_symbol(session, parser.symbol, parser.symbol.data_granularity, instrument)
     except Exception as ex:
-        logging.exception()
+        logging.exception("Can't load data into OHLCVs")
         raise PortfolioException("YahooFinanceService", "Can't load data into OHLCVs") from ex
     

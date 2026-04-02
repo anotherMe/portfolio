@@ -4,11 +4,14 @@ from sqlalchemy.orm import Session
 from typing import List
 from datetime import datetime, timedelta
 
+from pydantic import BaseModel
+
 from db.deps import get_db
 from services import yahoo_finance_service
 from repositories.instruments_repository import get_instrument_by_id
 from repositories.ohlcvs_repository import get_latest_timestamp
 
+import json
 import time
 
 router = APIRouter()
@@ -31,3 +34,26 @@ def load_prices_for_instrument(instrument_id: int, session: Session = Depends(ge
 
     success, message = yahoo_finance_service.download_history(session, instrument, start_date)
     return {"success": success, "message": message}
+
+
+class LoadFromFileRequest(BaseModel):
+    file_path: str
+    create_instrument: bool = True
+
+
+@router.post("/load-from-json-file")
+def load_prices_from_json_file(request: LoadFromFileRequest, session: Session = Depends(get_db)):
+    """
+    Parse a Yahoo Finance JSON file from a local path and load OHLCV data.
+    """
+    try:
+        with open(request.file_path, "r") as f:
+            parser = yahoo_finance_service.parse_json_file_into_yahoo_symbol(f)
+        yahoo_finance_service.parse_file(session, parser, request.create_instrument)
+        return {"success": True, "message": f"Loaded OHLCV data for {parser.symbol.ticker}"}
+    except FileNotFoundError:
+        return {"success": False, "message": f"File not found: {request.file_path}"}
+    except yahoo_finance_service.PortfolioException as e:
+        return {"success": False, "message": e.message}
+    except Exception as e:
+        return {"success": False, "message": str(e)}

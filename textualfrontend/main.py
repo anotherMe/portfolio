@@ -1,4 +1,5 @@
 import logging
+from pathlib import Path
 from typing import Iterable
 log = logging.getLogger(__name__)
 
@@ -8,8 +9,10 @@ from textual.screen import Screen
 from textual.containers import Vertical
 from textual.binding import Binding
 from textual.logging import TextualHandler
+from textual import work
 
-from api_service import get_accounts, backup_database
+from api_service import get_accounts, backup_database, load_ohlcv_from_json_file
+from modals.file_picker import FilePickerModal
 
 # Import custom widgets
 from tabs.instruments_tab import InstrumentsTab
@@ -52,6 +55,7 @@ class MyPortfolio(App):
         yield from super().get_system_commands(screen)
         yield SystemCommand("Toggle dark mode", "Toggle dark mode", self._toggle_dark)
         yield SystemCommand("Backup database", "Create a timestamped backup of the database", self._backup_database)
+        yield SystemCommand("Load OHLCV from JSON file", "Import Yahoo Finance JSON file into OHLCV table", self._open_ohlcv_file_picker)
 
     def compose(self) -> ComposeResult:
         """Create child widgets for the app."""
@@ -97,6 +101,49 @@ class MyPortfolio(App):
             self.notify(f"Backup created: {path}", title="Backup", severity="information")
         except Exception as exc:
             self.notify(str(exc), title="Backup failed", severity="error")
+
+    def _open_ohlcv_file_picker(self) -> None:
+        """Open the file picker modal to select a Yahoo Finance JSON file."""
+        self.push_screen(
+            FilePickerModal(
+                title="Select Yahoo Finance JSON file",
+                start_path=Path.home(),
+                extensions=[".json"],
+            ),
+            self._on_ohlcv_file_selected,
+        )
+
+    def _on_ohlcv_file_selected(self, path: Path | None) -> None:
+        if path is None:
+            return
+        self._load_ohlcv_from_file(str(path))
+
+    @work(thread=True)
+    def _load_ohlcv_from_file(self, file_path: str) -> None:
+        """Call the backend to load OHLCV data from the selected JSON file."""
+        try:
+            result = load_ohlcv_from_json_file(file_path)
+            if result.get("success"):
+                self.app.call_from_thread(
+                    self.notify,
+                    result["message"],
+                    title="OHLCV Import",
+                    severity="information",
+                )
+            else:
+                self.app.call_from_thread(
+                    self.notify,
+                    result["message"],
+                    title="OHLCV Import failed",
+                    severity="error",
+                )
+        except Exception as exc:
+            self.app.call_from_thread(
+                self.notify,
+                str(exc),
+                title="OHLCV Import failed",
+                severity="error",
+            )
 
     def _toggle_dark(self) -> None:
         """An action to toggle dark mode."""

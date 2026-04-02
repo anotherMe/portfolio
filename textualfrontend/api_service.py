@@ -146,3 +146,13 @@ def backup_database() -> str:
     response = requests.post(f"{API_URL}/backup/")
     response.raise_for_status()
     return response.json()["backup"]
+
+
+def load_ohlcv_from_json_file(file_path: str, create_instrument: bool = True) -> dict:
+    """Ask the backend to parse a local Yahoo Finance JSON file and load OHLCV data."""
+    response = requests.post(
+        f"{API_URL}/prices/load-from-json-file",
+        json={"file_path": file_path, "create_instrument": create_instrument},
+    )
+    response.raise_for_status()
+    return response.json()
