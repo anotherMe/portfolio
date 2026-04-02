@@ -341,7 +341,7 @@
                 },
 
                 async fetchPosition() {
-                    const url = `http://localhost:8000/api/positions?status_filter=all`;
+                    const url = `http://localhost:8000/positions?status_filter=all`;
                     const response = await fetch(url);
                     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                     const positions = await response.json();
@@ -352,7 +352,7 @@
                 },
 
                 async fetchTrades() {
-                    const url = `http://localhost:8000/api/trades`;
+                    const url = `http://localhost:8000/trades`;
                     const response = await fetch(url);
                     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                     const allTrades = await response.json();
@@ -364,7 +364,7 @@
                     this.error = null;
                     this.successMessage = null;
                     try {
-                        const response = await fetch('http://localhost:8000/api/trades', {
+                        const response = await fetch('http://localhost:8000/trades', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
@@ -417,7 +417,7 @@
                     this.error = null;
                     this.successMessage = null;
                     try {
-                        const response = await fetch(`http://localhost:8000/api/trades/${this.editTradeData.id}`, {
+                        const response = await fetch(`http://localhost:8000/trades/${this.editTradeData.id}`, {
                             method: 'PUT',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
@@ -457,7 +457,7 @@
                     this.error = null;
                     this.successMessage = null;
                     try {
-                        const response = await fetch(`http://localhost:8000/api/trades/${this.tradeToDelete.id}`, {
+                        const response = await fetch(`http://localhost:8000/trades/${this.tradeToDelete.id}`, {
                             method: 'DELETE'
                         });
                         
@@ -483,7 +483,7 @@
                     this.error = null;
                     this.successMessage = null;
                     try {
-                        const response = await fetch(`http://localhost:8000/api/positions/${this.positionId}/close`, {
+                        const response = await fetch(`http://localhost:8000/positions/${this.positionId}/close`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({

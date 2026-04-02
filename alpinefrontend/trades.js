@@ -32,7 +32,7 @@ document.addEventListener('alpine:init', () => {
             this.isLoading = true;
             this.error = null;
             try {
-                const url = `http://localhost:8000/api/trades?account_name=${this.selectedAccount}`;
+                const url = `http://localhost:8000/trades?account_name=${this.selectedAccount}`;
                 const response = await fetch(url);
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);

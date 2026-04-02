@@ -47,7 +47,7 @@ document.addEventListener('alpine:init', () => {
         },
 
         async fetchPositions() {
-            const url = `http://localhost:8000/api/positions?status_filter=${this.statusFilter}&account_name=${this.selectedAccount}`;
+            const url = `http://localhost:8000/positions?status_filter=${this.statusFilter}&account_name=${this.selectedAccount}`;
             const response = await fetch(url);
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
@@ -56,7 +56,7 @@ document.addEventListener('alpine:init', () => {
         },
 
         async fetchTotals() {
-            const url = `http://localhost:8000/api/positions/totals?status_filter=${this.statusFilter}&account_name=${this.selectedAccount}`;
+            const url = `http://localhost:8000/positions/totals?status_filter=${this.statusFilter}&account_name=${this.selectedAccount}`;
             const response = await fetch(url);
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);

@@ -13,7 +13,7 @@ document.addEventListener('alpine:init', () => {
             this.isLoading = true;
             this.error = null;
             try {
-                const response = await fetch("http://localhost:8000/api/instruments");
+                const response = await fetch("http://localhost:8000/instruments");
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }

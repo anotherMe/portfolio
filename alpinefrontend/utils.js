@@ -59,7 +59,7 @@ window.utils = {
 
     async fetchAccounts() {
         try {
-            const response = await fetch('http://localhost:8000/api/accounts');
+            const response = await fetch('http://localhost:8000/accounts');
             if (!response.ok) throw new Error('Failed to fetch accounts');
             return await response.json();
         } catch (err) {
@@ -70,7 +70,7 @@ window.utils = {
 
     async fetchInstruments() {
         try {
-            const response = await fetch('http://localhost:8000/api/instruments');
+            const response = await fetch('http://localhost:8000/instruments');
             if (!response.ok) throw new Error('Failed to fetch instruments');
             return await response.json();
         } catch (err) {

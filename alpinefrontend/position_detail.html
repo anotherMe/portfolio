@@ -215,7 +215,7 @@
                 },
 
                 async fetchPosition() {
-                    const url = `http://localhost:8000/api/positions?status_filter=all`;
+                    const url = `http://localhost:8000/positions?status_filter=all`;
                     const response = await fetch(url);
                     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                     const positions = await response.json();
@@ -226,7 +226,7 @@
                 },
 
                 async fetchTrades() {
-                    const url = `http://localhost:8000/api/trades`;
+                    const url = `http://localhost:8000/trades`;
                     const response = await fetch(url);
                     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                     const allTrades = await response.json();
