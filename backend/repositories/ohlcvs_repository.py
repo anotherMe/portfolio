@@ -1,5 +1,6 @@
 
 from pandas import DataFrame
+import math
 import pytz
 from sqlalchemy import desc, select, func
 from sqlalchemy.orm import Session, aliased
@@ -135,14 +136,18 @@ def load_ohlcv_from_symbol(session: Session, symbol, granularity: str, instrumen
             skipped += 1
             continue
 
+        if any(math.isnan(row[col]) for col in ("open", "high", "low", "close") if row[col] is not None):
+            skipped += 1
+            continue
+
         entry = OHLCV(
             instrument_id=instrument.id,
             timestamp=dt,
             granularity=granularity,
-            open=write_to_db(int(row["open"])),
-            high=write_to_db(int(row["high"])),
-            low=write_to_db(int(row["low"])),
-            close=write_to_db(int(row["close"])),
+            open=write_to_db(row["open"]),
+            high=write_to_db(row["high"]),
+            low=write_to_db(row["low"]),
+            close=write_to_db(row["close"]),
             volume=int(row["volume"] or 0),
         )
 

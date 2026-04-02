@@ -130,6 +130,10 @@ class MyPortfolio(App):
                     title="OHLCV Import",
                     severity="information",
                 )
+                try:
+                    self.app.call_from_thread(self.query_one("PricesTab").get_instruments_with_prices)
+                except Exception:
+                    pass
             else:
                 self.app.call_from_thread(
                     self.notify,
