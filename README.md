@@ -36,10 +36,13 @@ python main.py
 
 # Alpine Frontend
 
+The current Alpine frontend is not built, the JS dependencies are included in a *script* tag.
+
+To run the frontend, you just have to serve the files in the folder using a web server. For
+example:
+
 ```sh
-cd frontend
-npm install
-npm run dev
+python3 -m http.server 8080
 ```
 
 # Code policy

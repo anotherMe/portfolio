@@ -17,7 +17,3 @@ portfolio.db
 # IDEs
 .vscode/
 .idea/
-
-# JS
-node_modules/
-package-lock.json
