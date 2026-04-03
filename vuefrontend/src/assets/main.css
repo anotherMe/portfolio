@@ -1,0 +1,19 @@
+@import "tailwindcss";
+@import "primeicons/primeicons.css";
+
+/* Align Tailwind dark utilities with PrimeVue's .dark selector */
+@variant dark (&:where(.dark, .dark *));
+
+/* Tabular numbers for financial data */
+.numeric {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.positive {
+  color: var(--p-green-500);
+}
+
+.negative {
+  color: var(--p-red-500);
+}
