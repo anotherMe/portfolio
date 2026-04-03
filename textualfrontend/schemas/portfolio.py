@@ -36,3 +36,10 @@ class PositionSummary(BaseModel):
     position_closed: str = "" # Status string
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class PositionTotals(BaseModel):
+    currency: str
+    symbol: str
+    total_invested: float
+    total_pnl: float

@@ -4,12 +4,20 @@ document.addEventListener('alpine:init', () => {
         totals: [],
         isLoading: false,
         error: null,
-        statusFilter: 'all',
+        statusMode: 'all',
         searchQuery: '',
 
         // Account filtering
         selectedAccount: '',
         accounts: [],
+
+        get includeOpen() { return this.statusMode !== 'closed'; },
+        get includeClosed() { return this.statusMode !== 'open'; },
+        get selectedAccountId() {
+            if (!this.selectedAccount || this.selectedAccount === 'All') return null;
+            const acc = this.accounts.find(a => a.name === this.selectedAccount);
+            return acc ? acc.id : null;
+        },
 
         async init() {
             this.accounts = await window.utils.fetchAccounts();
@@ -47,20 +55,18 @@ document.addEventListener('alpine:init', () => {
         },
 
         async fetchPositions() {
-            const url = `http://localhost:8000/positions?status_filter=${this.statusFilter}&account_name=${this.selectedAccount}`;
-            const response = await fetch(url);
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
+            const params = new URLSearchParams({ include_open: this.includeOpen, include_closed: this.includeClosed });
+            if (this.selectedAccountId) params.append('account_id', this.selectedAccountId);
+            const response = await fetch(`http://localhost:8000/positions?${params}`);
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
             this.positions = await response.json();
         },
 
         async fetchTotals() {
-            const url = `http://localhost:8000/positions/totals?status_filter=${this.statusFilter}&account_name=${this.selectedAccount}`;
-            const response = await fetch(url);
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
+            const params = new URLSearchParams({ include_open: this.includeOpen, include_closed: this.includeClosed });
+            if (this.selectedAccountId) params.append('account_id', this.selectedAccountId);
+            const response = await fetch(`http://localhost:8000/positions/totals?${params}`);
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
             this.totals = await response.json();
         },
 

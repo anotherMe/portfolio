@@ -4,9 +4,13 @@ from typing import List
 
 from db.deps import get_db
 from services import positions_service
-from schemas.portfolio import PositionSummary
+from schemas.portfolio import PositionSummary, PositionTotals
 
 router = APIRouter()
+
+@router.get("/totals", response_model=List[PositionTotals])
+def get_portfolio_totals(account_id: int = None, include_open: bool = True, include_closed: bool = True, db: Session = Depends(get_db)):
+    return positions_service.get_positions_totals(db, account_id=account_id, include_open=include_open, include_closed=include_closed)
 
 @router.get("/", response_model=List[PositionSummary])
 def get_portfolio(account_id: int = None, include_open: bool = True, include_closed: bool = True, db: Session = Depends(get_db)):

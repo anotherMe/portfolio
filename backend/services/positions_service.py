@@ -7,7 +7,7 @@ from db.models import Position
 from enums import TransactionType, TradeType
 from repositories import positions_repository, trades_repository, transactions_repository
 from services import prices_service
-from schemas.portfolio import PositionSummary
+from schemas.portfolio import PositionSummary, PositionTotals
 from utils import read_from_db
 import logging
 
@@ -127,6 +127,20 @@ def _apply_fifo(session: Session, positions: List[Position]) -> List[PositionSum
         position_dtos.append(dto)
 
     return position_dtos
+
+def get_positions_totals(session: Session, account_id: int = None, include_open: bool = True, include_closed: bool = True) -> List[PositionTotals]:
+    positions = get_positions_summary(session, account_id=account_id, include_open=include_open, include_closed=include_closed)
+
+    totals_by_currency: dict = {}
+    for pos in positions:
+        currency = pos.instrument_currency or "Unknown"
+        if currency not in totals_by_currency:
+            totals_by_currency[currency] = PositionTotals(currency=currency, symbol=currency, total_invested=0.0, total_pnl=0.0)
+        totals_by_currency[currency].total_invested += pos.total_invested
+        totals_by_currency[currency].total_pnl += pos.pnl
+
+    return list(totals_by_currency.values())
+
 
 def get_positions_summary(session: Session, account_id: int = None, include_closed: bool = True, include_open: bool = True) -> List[PositionSummary]:
     """
