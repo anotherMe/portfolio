@@ -1,0 +1,59 @@
+{
+    "folders": [
+        {
+            "name": "portfolio (root)",
+            "path": "."
+        },
+        {
+            "name": "backend",
+            "path": "backend"
+        },
+        {
+            "name": "textualfrontend",
+            "path": "textualfrontend"
+        },
+        {
+            "name": "vuefrontend",
+            "path": "vuefrontend"
+        },
+        {
+            "name": "alpinefrontend",
+            "path": "alpinefrontend"
+        }
+    ],
+    "settings": {
+        "python.defaultInterpreterPath": "/opt/homebrew/opt/python@3.14/bin/python3"
+    },
+    "launch": {
+        "version": "0.2.0",
+        "configurations": [
+            {
+                "name": "Python Debugger: FastAPI",
+                "type": "debugpy",
+                "request": "launch",
+                "cwd": "${workspaceFolder:backend}",
+                "python": "${workspaceFolder:backend}/.venv/bin/python",
+                "module": "uvicorn",
+                "args": [
+                    "app:app",
+                    "--reload"
+                ],
+                "jinja": true
+            },
+            {
+                "name": "Python Debugger: Textual Frontend",
+                "type": "debugpy",
+                "request": "launch",
+                "cwd": "${workspaceFolder:textualfrontend}",
+                "python": "${workspaceFolder:textualfrontend}/.venv/bin/python",
+                "module": "textual",
+                "args": [
+                    "run",
+                    "--dev",
+                    "main.py"
+                ],
+                "console": "integratedTerminal"
+            }
+        ]
+    }
+}
