@@ -17,11 +17,16 @@ class InstrumentsTab(Vertical):
     """The Instruments tab content."""
 
     DEFAULT_CSS = """
+    InstrumentsTab {
+        height: 1fr;
+    }
+    InstrumentsTab #instruments_table {
+        height: 1fr;
+    }
     InstrumentsTab #instruments-toolbar {
         height: auto;
         align-horizontal: right;
-        margin-top: 1;
-        margin-right: 1;
+        margin: 1;
     }
     """
 

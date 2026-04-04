@@ -23,6 +23,12 @@ class TradesTab(Vertical):
     ]
 
     DEFAULT_CSS = """
+    TradesTab {
+        height: 1fr;
+    }
+    TradesTab #trades_table {
+        height: 1fr;
+    }
     TradesTab #trades-toolbar {
         height: auto;
         align-horizontal: right;

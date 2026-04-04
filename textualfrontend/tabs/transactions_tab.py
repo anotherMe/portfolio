@@ -23,6 +23,12 @@ class TransactionsTab(Vertical):
     ]
 
     DEFAULT_CSS = """
+    TransactionsTab {
+        height: 1fr;
+    }
+    TransactionsTab #transactions_table {
+        height: 1fr;
+    }
     TransactionsTab #transactions-toolbar {
         height: auto;
         align-horizontal: right;

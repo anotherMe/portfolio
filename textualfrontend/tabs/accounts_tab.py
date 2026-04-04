@@ -22,6 +22,12 @@ class AccountsTab(Vertical):
     ]
 
     DEFAULT_CSS = """
+    AccountsTab {
+        height: 1fr;
+    }
+    AccountsTab #accounts_table {
+        height: 1fr;
+    }
     AccountsTab #accounts-toolbar {
         height: auto;
         align-horizontal: right;
