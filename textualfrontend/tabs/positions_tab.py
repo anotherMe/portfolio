@@ -99,7 +99,7 @@ class PositionDetails(Horizontal):
     
     def compose(self) -> ComposeResult:
         # Placeholder for our details
-        yield Static("Position Details Here", id="position-details-content")
+        yield Static("No position selected", id="position-details-content")
 
 class PositionsList(Vertical):
     """Positions list (DataTable) on top half and the details view on the bottom half"""
@@ -111,20 +111,16 @@ class PositionsList(Vertical):
         #     yield filter    
 
         table = DataTable(id="positions_table", cursor_type="row")
-        table.styles.height = "2fr"
         yield table
 
         details = PositionDetails(id="position_details")
-        details.styles.height = "1fr"
         yield details
 
     def on_mount(self) -> None:
         """Fetch and populate data when the tab is mounted."""
 
         self._positions: dict = {}
-
         table = self.query_one("#positions_table", DataTable)
-
         self.columns_to_show = [
             "instrument_name", "instrument_ticker",
             "opening_date", "total_invested", "latest_price",
@@ -132,7 +128,6 @@ class PositionsList(Vertical):
             "pnl_percent", "closing_date"
         ]
         table.add_columns(*self.columns_to_show)
-
         positions = get_positions()
         if positions:
             self._populate_table(positions, table)
@@ -178,6 +173,18 @@ class PositionsList(Vertical):
 
 class PositionsTab(Vertical):
     """The Positions tab content."""
+
+    DEFAULT_CSS = """
+    PositionsTab {
+        height: 1fr;
+    }
+    PositionsTab #positions_table {
+        height: 3fr;
+    }
+    TradPositionsTabesTab #positions_details {
+        height: 2fr;
+    }
+    """
 
     BINDINGS = [
         Binding("f", "filter", "Show Filters"),
