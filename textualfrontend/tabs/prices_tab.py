@@ -85,9 +85,12 @@ class PricesTab(Vertical):
 
     def on_mount(self) -> None:
         """Fetch and populate data when the tab is mounted."""
-        
+
         log.info("Mounting PricesTab and loading instruments")
-        self.get_instruments_with_prices()    
+        self.get_instruments_with_prices()
+
+    def reload(self) -> None:
+        self.get_instruments_with_prices()
 
     @on(Button.Pressed, "#start_loading")
     def start_loading(self) -> None:
@@ -124,8 +127,11 @@ class PricesTab(Vertical):
     def get_instruments_with_prices(self) -> None:
         """Refresh the instruments table."""
 
-        self.instruments = get_instruments_with_last_price()
-        self.app.call_from_thread(self.refresh_table, self.instruments)
+        try:
+            self.instruments = get_instruments_with_last_price()
+            self.app.call_from_thread(self.refresh_table, self.instruments)
+        except Exception as exc:
+            log.error(f"Failed to load instruments with prices: {exc}")
 
     @work(exclusive=True, thread=True)
     def load_all(self) -> None:

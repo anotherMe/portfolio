@@ -57,6 +57,9 @@ class AccountsTab(Vertical):
 
     # ── Data ──────────────────────────────────────────────────────────
 
+    def reload(self) -> None:
+        self._fetch_data()
+
     @work(thread=True)
     def _fetch_data(self) -> None:
         try:

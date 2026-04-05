@@ -32,8 +32,7 @@ class TransactionsTab(Vertical):
     TransactionsTab #transactions-toolbar {
         height: auto;
         align-horizontal: right;
-        margin-top: 1;
-        margin-right: 1;
+        margin: 1;
     }
     """
 
@@ -59,10 +58,13 @@ class TransactionsTab(Vertical):
 
     # ── Data ──────────────────────────────────────────────────────────
 
+    def reload(self, account_id: str | None = None) -> None:
+        self._fetch_data(account_id)
+
     @work(thread=True)
-    def _fetch_data(self) -> None:
+    def _fetch_data(self, account_id: str | None = None) -> None:
         try:
-            transactions = get_transactions()
+            transactions = get_transactions(account_id)
         except Exception as exc:
             log.error(f"Failed to load transactions: {exc}")
             transactions = []

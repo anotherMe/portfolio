@@ -106,10 +106,6 @@ class PositionsList(Vertical):
 
     def compose(self) -> ComposeResult:
 
-        # with Collapsible(title="Filter", id="filters_collapsible", collapsed=True):
-        #     filter = PositionFilter(id="position_filter")
-        #     yield filter    
-
         table = DataTable(id="positions_table", cursor_type="row")
         yield table
 
@@ -128,31 +124,32 @@ class PositionsList(Vertical):
             "pnl_percent", "closing_date"
         ]
         table.add_columns(*self.columns_to_show)
-        positions = get_positions()
-        if positions:
-            self._populate_table(positions, table)
+        self.refresh_table()
 
     @work(exclusive=True, thread=True)
     def refresh_table(self, account_id: int = None, filter: Filter = None) -> None:
         """Clear and repopulate the table filtered by account_id and optional filter."""
 
-        table = self.query_one("#positions_table", DataTable)
-        position_status = filter.position_status if filter else "all"
-        positions = get_positions(
-            account_id=account_id,
-            include_open=(position_status in ["open", "all"]),
-            include_closed=(position_status in ["closed", "all"]),
-        )
-        if filter:
-            if filter.instrument_name:
-                positions = [p for p in positions if filter.instrument_name.lower() in p.instrument_name.lower()]
-            if filter.ticker:
-                positions = [p for p in positions if filter.ticker.lower() in p.instrument_ticker.lower()]
-            if filter.isin:
-                positions = [p for p in positions if filter.isin.lower() in p.instrument_isin.lower()]
-        table.clear()
-        if positions:
-            self._populate_table(positions, table)
+        try:
+            table = self.query_one("#positions_table", DataTable)
+            position_status = filter.position_status if filter else "all"
+            positions = get_positions(
+                account_id=account_id,
+                include_open=(position_status in ["open", "all"]),
+                include_closed=(position_status in ["closed", "all"]),
+            )
+            if filter:
+                if filter.instrument_name:
+                    positions = [p for p in positions if filter.instrument_name.lower() in p.instrument_name.lower()]
+                if filter.ticker:
+                    positions = [p for p in positions if filter.ticker.lower() in p.instrument_ticker.lower()]
+                if filter.isin:
+                    positions = [p for p in positions if filter.isin.lower() in p.instrument_isin.lower()]
+            table.clear()
+            if positions:
+                self._populate_table(positions, table)
+        except Exception as exc:
+            log.error(f"Failed to load positions: {exc}")
 
 
     def _populate_table(self, positions, table):
@@ -178,10 +175,10 @@ class PositionsTab(Vertical):
     PositionsTab {
         height: 1fr;
     }
-    PositionsTab #positions_table {
+    PositionsList #positions_table {
         height: 3fr;
     }
-    TradPositionsTabesTab #positions_details {
+    PositionsList #positions_details {
         height: 2fr;
     }
     """

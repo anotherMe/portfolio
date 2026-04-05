@@ -3,15 +3,16 @@ from pathlib import Path
 from typing import Iterable
 log = logging.getLogger(__name__)
 
+import requests
 from textual.app import App, ComposeResult, SystemCommand
-from textual.widgets import Footer, Header, TabPane, TabbedContent, Static
+from textual.widgets import Footer, Header, TabPane, TabbedContent, Static, Button
 from textual.screen import Screen
-from textual.containers import Vertical
+from textual.containers import Vertical, Horizontal
 from textual.binding import Binding
 from textual.logging import TextualHandler
 from textual import work
 
-from api_service import get_accounts, backup_database, load_ohlcv_from_json_file
+from api_service import API_URL, get_accounts, backup_database, load_ohlcv_from_json_file
 from modals.file_picker import FilePickerModal
 
 # Import custom widgets
@@ -26,6 +27,69 @@ logging.basicConfig(
     level="DEBUG",
     handlers=[TextualHandler()],
 )
+
+class BackendOfflineScreen(Screen):
+    """Shown when the backend API cannot be reached at startup."""
+
+    CSS = """
+    BackendOfflineScreen {
+        align: center middle;
+    }
+    #offline-container {
+        width: 64;
+        height: auto;
+        border: round red;
+        padding: 2 4;
+    }
+    #offline-title {
+        text-align: center;
+        color: red;
+        text-style: bold;
+        margin-bottom: 1;
+    }
+    #offline-message {
+        text-align: center;
+        margin-bottom: 2;
+    }
+    #offline-buttons {
+        align: center middle;
+        height: auto;
+    }
+    #offline-buttons Button {
+        margin: 0 1;
+    }
+    """
+
+    def compose(self) -> ComposeResult:
+        with Vertical(id="offline-container"):
+            yield Static("Backend Unavailable", id="offline-title")
+            yield Static(
+                f"Cannot connect to the backend at [bold]{API_URL}[/bold].\n"
+                "Please start the API server and press Retry.",
+                id="offline-message",
+            )
+            with Horizontal(id="offline-buttons"):
+                yield Button("Retry", id="retry-btn", variant="primary")
+                yield Button("Quit", id="quit-btn", variant="error")
+
+    def on_button_pressed(self, event: Button.Pressed) -> None:
+        if event.button.id == "quit-btn":
+            self.app.exit()
+        elif event.button.id == "retry-btn":
+            self.query_one("#retry-btn", Button).disabled = True
+            self._retry()
+
+    @work(thread=True)
+    def _retry(self) -> None:
+        try:
+            accounts = get_accounts()
+            self.app.call_from_thread(self.dismiss, accounts)
+        except requests.exceptions.ConnectionError:
+            self.app.call_from_thread(self._on_retry_failed)
+
+    def _on_retry_failed(self) -> None:
+        self.query_one("#retry-btn", Button).disabled = False
+
 
 class StatusBar(Static):
     """A status bar showing app-wide state (current account, etc.)"""
@@ -79,13 +143,49 @@ class MyPortfolio(App):
 
     def on_mount(self) -> None:
         """Load accounts on startup."""
-
         log.info("App initialized")
+        self._load_accounts()
 
-        accounts = get_accounts()
+    @work(thread=True)
+    def _load_accounts(self) -> None:
+        """Fetch accounts from the backend in a worker thread."""
+        try:
+            accounts = get_accounts()
+            self.app.call_from_thread(self._set_accounts, accounts)
+        except requests.exceptions.ConnectionError:
+            self.app.call_from_thread(self._on_backend_unavailable)
+
+    def _set_accounts(self, accounts) -> None:
         self._accounts = [("All Accounts", None)] + [(acc.name, str(acc.id)) for acc in accounts]
         self._account_idx = 0
         self._update_status()
+
+    def _on_backend_unavailable(self) -> None:
+        self.push_screen(BackendOfflineScreen(), self._on_backend_reconnected)
+
+    def _on_backend_reconnected(self, accounts) -> None:
+        self._set_accounts(accounts)
+        self._refresh_all_tabs()
+
+    def _refresh_all_tabs(self) -> None:
+        _, account_id = self._accounts[self._account_idx]
+        for tab_class in ("InstrumentsTab", "AccountsTab", "PricesTab"):
+            try:
+                self.query_one(tab_class).reload()
+            except Exception:
+                pass
+        try:
+            self.query_one("PositionsTab").reload(account_id)
+        except Exception:
+            pass
+        try:
+            self.query_one("TradesTab").reload(account_id)
+        except Exception:
+            pass
+        try:
+            self.query_one("TransactionsTab").reload(account_id)
+        except Exception:
+            pass
 
     def _update_status(self) -> None:
         """Update the status bar with the currently selected account."""
@@ -156,24 +256,24 @@ class MyPortfolio(App):
         )
 
     def action_cycle_account(self) -> None:
-        """Cycle to the next account and refresh all data tables."""
-        
+        """Cycle to the next account and refresh account-dependent tabs."""
+
         self._account_idx = (self._account_idx + 1) % len(self._accounts)
         _, account_id = self._accounts[self._account_idx]
-
         self._update_status()
 
         try:
             self.query_one("PositionsTab").reload(account_id)
-        except Exception: pass
-
+        except Exception:
+            pass
         try:
-            self.query_one("TradesTab")._fetch_data()
-        except Exception: pass
-
+            self.query_one("TradesTab").reload(account_id)
+        except Exception:
+            pass
         try:
-            self.query_one("TransactionsTab")._fetch_data()
-        except Exception: pass
+            self.query_one("TransactionsTab").reload(account_id)
+        except Exception:
+            pass
 
 
 if __name__ == "__main__":
