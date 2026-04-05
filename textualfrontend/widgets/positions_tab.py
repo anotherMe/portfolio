@@ -6,7 +6,6 @@ from textual.containers import Vertical
 
 from .positions_filter import Filter, PositionFilter
 from .positions_list import PositionsList
-from .positions_details import PositionDetails
 from .position_edit import PositionEdit
 
 import logging
@@ -14,7 +13,7 @@ log = logging.getLogger(__name__)
 
 
 class PositionsTab(Vertical):
-    """The Positions tab: list view with inline details, switches to a full edit view."""
+    """The Positions tab: list view with inline totals, switches to a full edit view."""
 
     DEFAULT_CSS = """
     PositionsTab {
@@ -22,9 +21,6 @@ class PositionsTab(Vertical):
     }
     PositionsList #positions_table {
         height: 2fr;
-    }
-    PositionsList #position_details {
-        height: auto;
     }
     """
 
@@ -39,13 +35,6 @@ class PositionsTab(Vertical):
         super().__init__(**kwargs)
         self._current_account_id: int | None = None
         self._current_filter: Filter | None = None
-
-    def reload(self, account_id: int | None) -> None:
-        """Reload positions for a new account, keeping the current filter."""
-        self._current_account_id = account_id
-        self.query_one("#positions_list", PositionsList).refresh_table(
-            self._current_account_id, self._current_filter
-        )
 
     def compose(self) -> ComposeResult:
         with ContentSwitcher(id="positions_switcher", initial="positions_list"):
@@ -63,16 +52,6 @@ class PositionsTab(Vertical):
             self.query_one("#position_edit", PositionEdit).load(position)
 
         self.query_one("#positions_switcher", ContentSwitcher).current = "position_edit"
-
-    @on(DataTable.RowHighlighted, "#positions_table")
-    def on_data_table_row_highlighted(self, event: DataTable.RowHighlighted) -> None:
-        """Update the details panel as the cursor moves."""
-        row_key = event.row_key
-        if row_key is None:
-            return
-        position = self.query_one("#positions_list", PositionsList)._positions.get(row_key.value)
-        if position:
-            self.query_one("#position_details", PositionDetails).update(position)
 
     @on(Button.Pressed, "#position-back-button")
     def show_position_list(self) -> None:
@@ -108,3 +87,10 @@ class PositionsTab(Vertical):
             )
 
         self.app.push_screen(PositionFilter(self._current_filter), on_dismiss)
+
+    def reload(self, account_id: int | None) -> None:
+        """Reload positions for a new account, keeping the current filter."""
+        self._current_account_id = account_id
+        self.query_one("#positions_list", PositionsList).refresh_table(
+            self._current_account_id, self._current_filter
+        )

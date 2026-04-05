@@ -5,7 +5,7 @@ from textual.containers import Vertical
 
 from api_service import get_positions
 from .positions_filter import Filter
-from .positions_details import PositionDetails
+from .positions_totals import PositionsTotals
 from .formatting import format_currency, format_currency_color, format_percent_color, format_date
 
 import logging
@@ -13,11 +13,11 @@ log = logging.getLogger(__name__)
 
 
 class PositionsList(Vertical):
-    """Positions DataTable (top) and PositionDetails panel (bottom)."""
+    """Positions DataTable (top) and PositionsTotals panel (bottom)."""
 
     def compose(self) -> ComposeResult:
         yield DataTable(id="positions_table", cursor_type="row")
-        yield PositionDetails(id="position_details")
+        yield PositionsTotals(id="positions_totals")
 
     def on_mount(self) -> None:
         self._positions: dict = {}
@@ -37,10 +37,12 @@ class PositionsList(Vertical):
         try:
             table = self.query_one("#positions_table", DataTable)
             position_status = filter.position_status if filter else "all"
+            include_open = position_status in ["open", "all"]
+            include_closed = position_status in ["closed", "all"]
             positions = get_positions(
                 account_id=account_id,
-                include_open=(position_status in ["open", "all"]),
-                include_closed=(position_status in ["closed", "all"]),
+                include_open=include_open,
+                include_closed=include_closed,
             )
             if filter:
                 if filter.instrument_name:
@@ -52,6 +54,11 @@ class PositionsList(Vertical):
             table.clear()
             if positions:
                 self._populate_table(positions, table)
+            self.query_one("#positions_totals", PositionsTotals).refresh_totals(
+                account_id=account_id,
+                include_open=include_open,
+                include_closed=include_closed,
+            )
         except Exception as exc:
             log.error(f"Failed to load positions: {exc}")
 

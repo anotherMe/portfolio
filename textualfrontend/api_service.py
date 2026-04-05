@@ -10,15 +10,18 @@ from schemas.account import AccountRead, AccountCreate, AccountUpdate
 API_URL = "http://localhost:8000"
 
 def get_positions(account_id: int = None, include_open: bool = True, include_closed: bool = True) -> list[portfolio.PositionSummary]:
-    
     url = f"{API_URL}/positions"
-    params = {}
-    params["account_id"] = account_id
-    params["include_open"] = include_open
-    params["include_closed"] = include_closed
+    params = {"account_id": account_id, "include_open": include_open, "include_closed": include_closed}
     response = requests.get(url, params=params)
     response.raise_for_status()
     return [portfolio.PositionSummary(**item) for item in response.json()]
+
+def get_position_totals(account_id: int = None, include_open: bool = True, include_closed: bool = True) -> list[portfolio.PositionTotals]:
+    url = f"{API_URL}/positions/totals"
+    params = {"account_id": account_id, "include_open": include_open, "include_closed": include_closed}
+    response = requests.get(url, params=params)
+    response.raise_for_status()
+    return [portfolio.PositionTotals(**item) for item in response.json()]
 
 def get_instruments() -> list[instrument.InstrumentRead]:
 

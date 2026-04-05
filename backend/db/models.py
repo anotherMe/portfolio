@@ -69,7 +69,6 @@ class Instrument(Base):
     description = Column(Text)
     currency = Column(String, nullable=False)
 
-    # prices = relationship("Price", back_populates="instrument", cascade="all")
     ohlcvs = relationship("OHLCV", back_populates="instrument", cascade="all")
     positions = relationship("Position", back_populates="instrument", cascade="all")
 
