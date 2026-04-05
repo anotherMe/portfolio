@@ -27,8 +27,9 @@ def compute_position_closed(qty: int, closing_date: Optional[datetime]) -> str:
 
 def _apply_fifo(session: Session, positions: List[Position]) -> List[PositionSummary]:
     """
-    Apply FIFO to trades of the same Instrument
+    Apply FIFO to trades of the same Position
     """
+
     if not positions:
         return []
 
@@ -114,8 +115,8 @@ def _apply_fifo(session: Session, positions: List[Position]) -> List[PositionSum
         current_value = dto.remaining_quantity * dto.latest_price
         dto.unrealized_pnl = current_value - dto.remaining_cost_basis
 
-        dto.realized_pnl_percent = (dto.realized_pnl / dto.total_invested * 100) if dto.total_invested > 0 else 0.0
-        dto.unrealized_pnl_percent = (dto.unrealized_pnl / dto.remaining_cost_basis * 100) if dto.remaining_cost_basis > 0 else 0.0
+        dto.realized_pnl_percent = (dto.realized_pnl / dto.total_invested) if dto.total_invested > 0 else 0.0
+        dto.unrealized_pnl_percent = (dto.unrealized_pnl / dto.remaining_cost_basis) if dto.remaining_cost_basis > 0 else 0.0
         
         # Total PnL
         dto.pnl = dto.realized_pnl + dto.unrealized_pnl + dto.transactions_amount
@@ -152,7 +153,6 @@ def get_positions_summary(session: Session, account_id: int = None, include_clos
     filtered_dtos = []
     for dto in dtos:
         is_closed = (dto.remaining_quantity == 0 and dto.closing_date is not None)
-        
         if is_closed and include_closed:
             filtered_dtos.append(dto)
         elif not is_closed and include_open:
