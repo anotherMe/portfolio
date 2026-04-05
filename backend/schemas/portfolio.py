@@ -30,7 +30,7 @@ class PositionSummary(BaseModel):
     realized_pnl_percent: float = 0.00
     unrealized_pnl_percent: float = 0.00
     
-    pnl: float = 0.00        # Total PnL (Realized + Unrealized + Transactions)
+    pnl: float = 0.00  # Total PnL (Realized + Unrealized + Transactions)
     pnl_percent: float = 0.00
     
     position_closed: str = "" # Status string
