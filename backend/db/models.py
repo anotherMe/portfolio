@@ -31,7 +31,7 @@ class UTCDateTime(TypeDecorator):
             return value
         if value.tzinfo is None:
             raise ValueError("naive datetime")
-        return value.astimezone(timezone.utc)
+        return value.astimezone(timezone.utc).replace(microsecond=0)
 
     def process_result_value(self, value, dialect):
         if value is None:
