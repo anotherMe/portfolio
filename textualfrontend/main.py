@@ -13,15 +13,13 @@ from textual.logging import TextualHandler
 from textual import work
 
 from api_service import API_URL, get_accounts, backup_database, load_ohlcv_from_json_file
-from modals.file_picker import FilePickerModal
-
-# Import custom widgets
-from tabs.instruments_tab import InstrumentsTab
-from tabs.positions_tab import PositionsTab
-from tabs.trades_tab import TradesTab
-from tabs.transactions_tab import TransactionsTab
-from tabs.accounts_tab import AccountsTab
-from tabs.prices_tab import PricesTab
+from widgets.file_picker import FilePickerModal
+from widgets.instruments_tab import InstrumentsTab
+from widgets.positions_tab import PositionsTab
+from widgets.trades_tab import TradesTab
+from widgets.transactions_tab import TransactionsTab
+from widgets.accounts_tab import AccountsTab
+from widgets.prices_tab import PricesTab
 
 logging.basicConfig(
     level="DEBUG",

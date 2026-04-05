@@ -6,8 +6,8 @@ from textual.containers import Horizontal, Vertical
 from schemas.instrument import InstrumentRead
 from api_service import get_instruments
 import api_service
-from edit.instrument_edit import InstrumentActionsModal, InstrumentCreateModal, InstrumentEditModal
-from widgets.confirm_screen import ConfirmScreen
+from .instrument_edit import InstrumentActionsModal, InstrumentCreateModal, InstrumentEditModal
+from .confirm_screen import ConfirmScreen
 
 import logging
 log = logging.getLogger(__name__)
@@ -85,10 +85,7 @@ class InstrumentsTab(Vertical):
 
     def _on_action(self, action: str | None) -> None:
         if action == "edit":
-            self.app.push_screen(
-                InstrumentEditModal(self._selected),
-                self._on_saved,
-            )
+            self.app.push_screen(InstrumentEditModal(self._selected), self._on_saved)
         elif action == "delete":
             instrument = self._selected
             self.app.push_screen(

@@ -9,142 +9,13 @@ from schemas.trade import TradeRead
 from schemas.transaction import TransactionRead
 from api_service import get_trades_for_position, get_transactions_for_position
 import api_service
-from edit.trade_edit import TradeEdit
-from edit.transaction_edit import TransactionEdit
-from widgets.confirm_screen import ConfirmScreen
+from .trade_edit import TradeEdit, TradeActionsModal
+from .transaction_edit import TransactionEdit, TransactionActionsModal
+from .confirm_screen import ConfirmScreen
 
 import logging
 log = logging.getLogger(__name__)
 
-
-# ──────────────────────────────────────────────────────────────────────────────
-# Row-action modals
-# ──────────────────────────────────────────────────────────────────────────────
-
-class TradeActionsModal(ModalScreen):
-    """Modal shown when a trade row is selected."""
-
-    BINDINGS = [("escape", "dismiss", "Cancel")]
-
-    DEFAULT_CSS = """
-    TradeActionsModal {
-        align: center middle;
-    }
-    TradeActionsModal > Vertical {
-        width: 60;
-        height: auto;
-        padding: 1 2;
-        background: $surface;
-        border: solid $primary;
-    }
-    TradeActionsModal #modal-info {
-        padding-bottom: 1;
-    }
-    TradeActionsModal #modal-buttons {
-        height: auto;
-        margin-top: 1;
-        align-horizontal: right;
-    }
-    TradeActionsModal #modal-buttons Button {
-        margin-left: 1;
-    }
-    """
-
-    def __init__(self, trade: TradeRead, **kwargs):
-        super().__init__(**kwargs)
-        self._trade = trade
-
-    def compose(self) -> ComposeResult:
-        t = self._trade
-        with Vertical():
-            yield Static(
-                f"[bold]{t.date.strftime('%Y-%m-%d %H:%M')}[/bold]  "
-                f"{t.type.value.upper()}  "
-                f"Qty: [bold]{t.quantity}[/bold]  "
-                f"@ [bold]{t.price:,.4f}[/bold]",
-                id="modal-info",
-            )
-            with Horizontal(id="modal-buttons"):
-                yield Button("Cancel", id="modal-cancel-btn")
-                yield Button("Edit", id="modal-edit-btn", variant="warning")
-                yield Button("Delete", id="modal-delete-btn", variant="error")
-
-    @on(Button.Pressed, "#modal-cancel-btn")
-    def on_cancel(self) -> None:
-        self.dismiss(None)
-
-    @on(Button.Pressed, "#modal-edit-btn")
-    def on_edit(self) -> None:
-        self.dismiss("edit")
-
-    @on(Button.Pressed, "#modal-delete-btn")
-    def on_delete(self) -> None:
-        self.dismiss("delete")
-
-
-class TransactionActionsModal(ModalScreen):
-    """Modal shown when a transaction row is selected."""
-
-    BINDINGS = [("escape", "dismiss", "Cancel")]
-
-    DEFAULT_CSS = """
-    TransactionActionsModal {
-        align: center middle;
-    }
-    TransactionActionsModal > Vertical {
-        width: 60;
-        height: auto;
-        padding: 1 2;
-        background: $surface;
-        border: solid $primary;
-    }
-    TransactionActionsModal #modal-info {
-        padding-bottom: 1;
-    }
-    TransactionActionsModal #modal-buttons {
-        height: auto;
-        margin-top: 1;
-        align-horizontal: right;
-    }
-    TransactionActionsModal #modal-buttons Button {
-        margin-left: 1;
-    }
-    """
-
-    def __init__(self, transaction: TransactionRead, **kwargs):
-        super().__init__(**kwargs)
-        self._transaction = transaction
-
-    def compose(self) -> ComposeResult:
-        tx = self._transaction
-        with Vertical():
-            yield Static(
-                f"[bold]{tx.date.strftime('%Y-%m-%d %H:%M')}[/bold]  "
-                f"{tx.type.value.upper()}  "
-                f"Amount: [bold]{tx.amount:,.2f}[/bold]",
-                id="modal-info",
-            )
-            with Horizontal(id="modal-buttons"):
-                yield Button("Cancel", id="modal-cancel-btn")
-                yield Button("Edit", id="modal-edit-btn", variant="warning")
-                yield Button("Delete", id="modal-delete-btn", variant="error")
-
-    @on(Button.Pressed, "#modal-cancel-btn")
-    def on_cancel(self) -> None:
-        self.dismiss(None)
-
-    @on(Button.Pressed, "#modal-edit-btn")
-    def on_edit(self) -> None:
-        self.dismiss("edit")
-
-    @on(Button.Pressed, "#modal-delete-btn")
-    def on_delete(self) -> None:
-        self.dismiss("delete")
-
-
-# ──────────────────────────────────────────────────────────────────────────────
-# Main widget
-# ──────────────────────────────────────────────────────────────────────────────
 
 class PositionEdit(Vertical):
     """
@@ -234,16 +105,13 @@ class PositionEdit(Vertical):
     # ──────────────────────────────────────────────────────────────────
 
     def compose(self) -> ComposeResult:
-        # Instrument header
         with Horizontal(id="pe-instrument-bar"):
             yield Static("", id="pe-instrument-name")
             yield Static("", id="pe-instrument-meta")
 
-        # Position P&L summary bar
         with Horizontal(id="pe-summary-bar"):
             yield Static("", id="pe-summary-info")
 
-        # Main content: trades | transactions
         with Horizontal(id="pe-tables-section"):
 
             with Vertical(id="pe-trades-section"):
@@ -258,20 +126,15 @@ class PositionEdit(Vertical):
                 with Horizontal(classes="pe-add-bar"):
                     yield Button("+ Add Transaction", id="pe-add-transaction-btn", variant="success", classes="pe-add-btn")
 
-        # Footer
         with Horizontal(id="pe-footer"):
-            yield Button("← Back to List", id="position-back-button", variant="primary")  # Note: This button is handled in positions_tab.py
+            yield Button("← Back to List", id="position-back-button", variant="primary")
 
     def on_mount(self) -> None:
-        trades_table = self.query_one("#pe-trades-table", DataTable)
-        trades_table.add_columns("Date", "Type", "Qty", "Price", "Description")
-
-        transactions_table = self.query_one("#pe-transactions-table", DataTable)
-        transactions_table.add_columns("Date", "Type", "Amount", "Description")
+        self.query_one("#pe-trades-table", DataTable).add_columns("Date", "Type", "Qty", "Price", "Description")
+        self.query_one("#pe-transactions-table", DataTable).add_columns("Date", "Type", "Amount", "Description")
 
     def on_show(self) -> None:
         self.query_one("#pe-trades-table", DataTable).focus()
-        
 
     # ──────────────────────────────────────────────────────────────────
     # Public API

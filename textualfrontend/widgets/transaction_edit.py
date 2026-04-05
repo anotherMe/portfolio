@@ -15,6 +15,66 @@ import logging
 log = logging.getLogger(__name__)
 
 
+class TransactionActionsModal(ModalScreen):
+    """Modal shown when a transaction row is selected."""
+
+    BINDINGS = [("escape", "dismiss", "Cancel")]
+
+    DEFAULT_CSS = """
+    TransactionActionsModal {
+        align: center middle;
+    }
+    TransactionActionsModal > Vertical {
+        width: 60;
+        height: auto;
+        padding: 1 2;
+        background: $surface;
+        border: solid $primary;
+    }
+    TransactionActionsModal #modal-info {
+        padding-bottom: 1;
+    }
+    TransactionActionsModal #modal-buttons {
+        height: auto;
+        margin-top: 1;
+        align-horizontal: right;
+    }
+    TransactionActionsModal #modal-buttons Button {
+        margin-left: 1;
+    }
+    """
+
+    def __init__(self, transaction: TransactionRead, **kwargs):
+        super().__init__(**kwargs)
+        self._transaction = transaction
+
+    def compose(self) -> ComposeResult:
+        tx = self._transaction
+        with Vertical():
+            yield Static(
+                f"[bold]{tx.date.strftime('%Y-%m-%d %H:%M')}[/bold]  "
+                f"{tx.type.value.upper()}  "
+                f"Amount: [bold]{tx.amount:,.2f}[/bold]",
+                id="modal-info",
+            )
+            with Horizontal(id="modal-buttons"):
+                yield Button("Cancel", id="modal-cancel-btn")
+                yield Button("Edit", id="modal-edit-btn", variant="warning")
+                yield Button("Delete", id="modal-delete-btn", variant="error")
+
+    @on(Button.Pressed, "#modal-cancel-btn")
+    def on_cancel(self) -> None:
+        self.dismiss(None)
+
+    @on(Button.Pressed, "#modal-edit-btn")
+    def on_edit(self) -> None:
+        self.dismiss("edit")
+
+    @on(Button.Pressed, "#modal-delete-btn")
+    def on_delete(self) -> None:
+        self.dismiss("delete")
+
+
 class TransactionEdit(ModalScreen):
     """Modal form for creating or editing a Transaction."""
 

@@ -14,6 +14,67 @@ import logging
 log = logging.getLogger(__name__)
 
 
+class TradeActionsModal(ModalScreen):
+    """Modal shown when a trade row is selected."""
+
+    BINDINGS = [("escape", "dismiss", "Cancel")]
+
+    DEFAULT_CSS = """
+    TradeActionsModal {
+        align: center middle;
+    }
+    TradeActionsModal > Vertical {
+        width: 60;
+        height: auto;
+        padding: 1 2;
+        background: $surface;
+        border: solid $primary;
+    }
+    TradeActionsModal #modal-info {
+        padding-bottom: 1;
+    }
+    TradeActionsModal #modal-buttons {
+        height: auto;
+        margin-top: 1;
+        align-horizontal: right;
+    }
+    TradeActionsModal #modal-buttons Button {
+        margin-left: 1;
+    }
+    """
+
+    def __init__(self, trade: TradeRead, **kwargs):
+        super().__init__(**kwargs)
+        self._trade = trade
+
+    def compose(self) -> ComposeResult:
+        t = self._trade
+        with Vertical():
+            yield Static(
+                f"[bold]{t.date.strftime('%Y-%m-%d %H:%M')}[/bold]  "
+                f"{t.type.value.upper()}  "
+                f"Qty: [bold]{t.quantity}[/bold]  "
+                f"@ [bold]{t.price:,.4f}[/bold]",
+                id="modal-info",
+            )
+            with Horizontal(id="modal-buttons"):
+                yield Button("Cancel", id="modal-cancel-btn")
+                yield Button("Edit", id="modal-edit-btn", variant="warning")
+                yield Button("Delete", id="modal-delete-btn", variant="error")
+
+    @on(Button.Pressed, "#modal-cancel-btn")
+    def on_cancel(self) -> None:
+        self.dismiss(None)
+
+    @on(Button.Pressed, "#modal-edit-btn")
+    def on_edit(self) -> None:
+        self.dismiss("edit")
+
+    @on(Button.Pressed, "#modal-delete-btn")
+    def on_delete(self) -> None:
+        self.dismiss("delete")
+
+
 class TradeEdit(ModalScreen):
     """Modal form for creating or editing a Trade."""
 

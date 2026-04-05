@@ -7,8 +7,8 @@ from textual.containers import Horizontal, Vertical
 from schemas.account import AccountRead
 from api_service import get_accounts
 import api_service
-from edit.account_edit import AccountActionsModal, AccountCreateModal, AccountEditModal
-from widgets.confirm_screen import ConfirmScreen
+from .account_edit import AccountActionsModal, AccountCreateModal, AccountEditModal
+from .confirm_screen import ConfirmScreen
 
 import logging
 log = logging.getLogger(__name__)
@@ -48,11 +48,9 @@ class AccountsTab(Vertical):
         self._fetch_data()
 
     def _action_delete_account(self) -> None:
-        # Get the actual highlighted row in the table
         table = self.query_one("#accounts_table", DataTable)
         row_key, _ = table.coordinate_to_cell_key(table.cursor_coordinate)
         self._selected = self._accounts.get(str(row_key.value))
-        # Use the action handler to delete self._selected
         self._on_action("delete")
 
     # ── Data ──────────────────────────────────────────────────────────
@@ -96,10 +94,7 @@ class AccountsTab(Vertical):
 
     def _on_action(self, action: str | None) -> None:
         if action == "edit":
-            self.app.push_screen(
-                AccountEditModal(self._selected),
-                self._on_saved,
-            )
+            self.app.push_screen(AccountEditModal(self._selected), self._on_saved)
         elif action == "delete":
             account = self._selected
             self.app.push_screen(

@@ -7,9 +7,8 @@ from textual.containers import Horizontal, Vertical
 from schemas.transaction import TransactionRead
 from api_service import get_transactions
 import api_service
-from edit.position_edit import TransactionActionsModal
-from edit.transaction_edit import TransactionEdit
-from widgets.confirm_screen import ConfirmScreen
+from .transaction_edit import TransactionActionsModal, TransactionEdit
+from .confirm_screen import ConfirmScreen
 
 import logging
 log = logging.getLogger(__name__)
@@ -49,11 +48,9 @@ class TransactionsTab(Vertical):
         self._fetch_data()
 
     def _action_delete_transaction(self) -> None:
-        # Get the actual highlighted row in the table
         table = self.query_one("#transactions_table", DataTable)
         row_key, _ = table.coordinate_to_cell_key(table.cursor_coordinate)
         self._selected = self._transactions.get(str(row_key.value))
-        # Use the action handler to delete self._selected
         self._on_action("delete")
 
     # ── Data ──────────────────────────────────────────────────────────
@@ -98,10 +95,7 @@ class TransactionsTab(Vertical):
 
     def _on_action(self, action: str | None) -> None:
         if action == "edit":
-            self.app.push_screen(
-                TransactionEdit(self._selected.position_id, self._selected.account_id, self._selected),
-                self._on_saved,
-            )
+            self.app.push_screen(TransactionEdit(transaction=self._selected), self._on_saved)
         elif action == "delete":
             tx = self._selected
             self.app.push_screen(

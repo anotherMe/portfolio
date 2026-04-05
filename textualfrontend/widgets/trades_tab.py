@@ -7,9 +7,8 @@ from textual.containers import Horizontal, Vertical
 from schemas.trade import TradeRead
 from api_service import get_trades
 import api_service
-from edit.position_edit import TradeActionsModal
-from edit.trade_edit import TradeEdit
-from widgets.confirm_screen import ConfirmScreen
+from .trade_edit import TradeActionsModal, TradeEdit
+from .confirm_screen import ConfirmScreen
 
 import logging
 log = logging.getLogger(__name__)
@@ -49,11 +48,9 @@ class TradesTab(Vertical):
         self._fetch_data()
 
     def _action_delete_trade(self) -> None:
-        # Get the actual highlighted row in the table
         table = self.query_one("#trades_table", DataTable)
         row_key, _ = table.coordinate_to_cell_key(table.cursor_coordinate)
         self._selected = self._trades.get(str(row_key.value))
-        # Use the action handler to delete self._selected
         self._on_action("delete")
 
     # ── Data ──────────────────────────────────────────────────────────
@@ -99,15 +96,12 @@ class TradesTab(Vertical):
 
     def _on_action(self, action: str | None) -> None:
         if action == "edit":
-            self.app.push_screen(
-                TradeEdit(self._selected.position_id, self._selected),
-                self._on_saved,
-            )
+            self.app.push_screen(TradeEdit(trade=self._selected), self._on_saved)
         elif action == "delete":
             trade = self._selected
             self.app.push_screen(
                 ConfirmScreen(
-                    f"Delete trade on {trade.date.strftime('%Y-%m-%d %H:%M')} "
+                    f"Delete trade on {trade.date.strftime('%Y-%m-%d')} "
                     f"({trade.type.value.upper()} {trade.quantity} @ {trade.price:,.4f})?"
                 ),
                 lambda confirmed: self._delete(trade.id) if confirmed else None,
