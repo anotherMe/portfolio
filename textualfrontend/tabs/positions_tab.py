@@ -252,7 +252,9 @@ class PositionsTab(Vertical):
         switcher = self.query_one("#positions_switcher", ContentSwitcher)
         if switcher.current != "positions_list":
             switcher.current = "positions_list"
-            self.query_one("#positions_list", PositionsList).focus()
+            positions_list = self.query_one("#positions_list", PositionsList)
+            positions_list.refresh_table(self._current_account_id, self._current_filter)
+            positions_list.focus()
 
     def action_cycle_status(self) -> None:
         """Cycle the position_status filter through all → open → closed."""
